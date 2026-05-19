@@ -43,13 +43,13 @@ El presente proyecto tiene como finalidad diseñar e implementar una infraestruc
 
 InnovateTech experimenta un crecimiento acelerado en sus ventas online y una demanda crítica de soporte técnico. Para atender estas necesidades, el proyecto se enfoca en desplegar:
 
-Gestión de Identidad: Control centralizado de usuarios mediante LDAP.
+**Gestión de Identidad:** Control centralizado de usuarios mediante LDAP.
 
-Servicios Multimedia: Plataformas de streaming de audio y vídeo, además de videoconferencia (Jitsi).
+**Servicios Multimedia:** Plataformas de streaming de audio y vídeo, además de videoconferencia (Jitsi).
 
-Persistencia de Datos: Implementación de una base de datos relacional para la gestión operativa y auditoría.
+**Persistencia de Datos:** Implementación de una base de datos relacional para la gestión operativa y auditoría.
 
-Automatización y Monitorización: Despliegue de procesos automatizados mediante Ansible y centralización de registros de eventos.
+**Automatización y Monitorización:** Despliegue de procesos automatizados mediante Ansible y centralización de registros de eventos.
 
 ## Valores Técnicos Fundamentales
 
@@ -65,11 +65,40 @@ La solución se fundamenta en tres pilares esenciales:
 
 ## 2. Propuesta de CPD Local (Infraestructura Física) <a name="2-propuesta-de-cpd-local-infraestructura-fisica"></a>
 
+El Centro de Procesamiento de Datos (CPD) local se ha concebido como el centro neurálgico de administración y conectividad de InnovateTech. Su diseño físico prioriza la integridad del hardware y la continuidad del servicio.
+
 ### 2.1. Ubicación y Acondicionamiento <a name="21-ubicacion-y-acondicionamiento"></a>
-*(Contenido aquí...)*
+
+La sala técnica se ha acondicionado siguiendo normativas de seguridad y eficiencia:
+
+**- Entorno Físico:** Ubicación en una sala interior, sin ventanas y con muros de resistencia al fuego. Se utiliza suelo técnico elevado (30 cm) para la canalización oculta de cables y falso techo para la extracción de aire caliente.
+
+**- Climatización de Precisión:** Se implementa un sistema de aire acondicionado industrial manteniendo la temperatura constante entre 20°C y 22°C. El diseño utiliza la metodología de pasillos fríos y calientes para evitar puntos de calor en los equipos.
+
+**- Seguridad y Prevención:**
+  **- Detección de Incendios:** Sensores ópticos de humo y temperatura.
+  **- Extinción:** Sistema automático mediante gas inerte (Novec o CO2), que sofoca el fuego sin dañar los componentes electrónicos ni dejar residuos.
+  **- Control de Acceso:** Cerradura electrónica con registro de entrada para personal autorizado.
 
 ### 2.2. Diseño de Racks y Organización <a name="22-diseno-de-racks-y-organizacion"></a>
-*(Contenido aquí...)*
+
+Para una gestión eficiente, la infraestructura se divide en dos armarios Rack de 42U, separando las funciones de red de las de administración:
+
+### Rack 1: Networking y Seguridad (Infraestructura de Red)
+
+- Contiene los elementos que garantizan la comunicación interna y el enlace con AWS:
+- Patch Panels: Gestión del cableado estructurado que llega desde los puestos de trabajo.
+- Router de Borde y Firewall: Encargados de la seguridad perimetral y de mantener el túnel VPN con la nube.
+- Switch Core: Dispositivo de alta velocidad (Capa 3) para la distribución de VLANs.
+- SAI (Sistema de Alimentación Ininterrumpida): Ubicado en la parte inferior para proporcionar estabilidad eléctrica y autonomía en caso de fallo de suministro.
+
+### Rack 2: Gestión y Administración (Servicios Locales)
+
+- Orientado al soporte administrativo y la protección de datos local:
+- Servidor de Administración Local: Controlador de dominio secundario y gestión de políticas internas.
+- Almacenamiento NAS: Nodo dedicado a las copias de seguridad de la base de datos y logs de AWS, garantizando una redundancia fuera de la nube.
+- Consola KVM: Para la administración física de los servidores sin necesidad de periféricos individuales.
+- Servidor de Monitorización: Supervisión en tiempo real de la temperatura, consumo y estado de los servicios.
 
 ### 2.3. Infraestructura Eléctrica (SAI) <a name="23-infraestructura-electrica-sai"></a>
 *(Contenido aquí...)*
