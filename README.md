@@ -1,8 +1,8 @@
 (Foto de portada) (ni idea)
 
-# 📑 Proyecto Transversal: InnovateTech - Infraestructura Híbrida
+# Proyecto Transversal: InnovateTech - Infraestructura Híbrida
 
-## 📋 Tabla de Contenidos
+## Tabla de Contenidos
 
 1. [Introducción y Contexto del Proyecto](#1-introduccion-y-contexto-del-proyecto)
 2. [Propuesta de CPD Local (Infraestructura Física)](#2-propuesta-de-cpd-local-infraestructura-fisica)
