@@ -38,7 +38,29 @@
 ---
 
 ## 1. Introducción y Contexto del Proyecto <a name="1-introduccion-y-contexto-del-proyecto"></a>
-*(Contenido aquí...)*
+
+El presente proyecto tiene como finalidad diseñar e implementar una infraestructura tecnológica robusta para InnovateTech, una empresa en expansión dedicada a la provisión de servicios digitales. El núcleo de la propuesta es un modelo híbrido que combina la seguridad y el control de un CPD local con la escalabilidad y alta disponibilidad de la nube de Amazon Web Services (AWS).
+
+InnovateTech experimenta un crecimiento acelerado en sus ventas online y una demanda crítica de soporte técnico. Para atender estas necesidades, el proyecto se enfoca en desplegar:
+
+Gestión de Identidad: Control centralizado de usuarios mediante LDAP.
+
+Servicios Multimedia: Plataformas de streaming de audio y vídeo, además de videoconferencia (Jitsi).
+
+Persistencia de Datos: Implementación de una base de datos relacional para la gestión operativa y auditoría.
+
+Automatización y Monitorización: Despliegue de procesos automatizados mediante Ansible y centralización de registros de eventos.
+
+## Valores Técnicos Fundamentales
+
+La solución se fundamenta en tres pilares esenciales:
+
+## Seguridad: Implementación de protocolos cifrados, gestión rigurosa de roles y segmentación de red para garantizar la integridad y confidencialidad.
+
+## Sostenibilidad: Diseño eficiente del hardware local con el objetivo de minimizar el consumo energético y evaluar la huella ecológica conforme al Módulo 1665.
+
+## Escalabilidad: Arquitectura en la nube diseñada para adaptarse dinámicamente a picos de demanda en servicios multimedia.
+
 [⬆ Volver al índice](#-tabla-de-contenidos)
 
 ## 2. Propuesta de CPD Local (Infraestructura Física) <a name="2-propuesta-de-cpd-local-infraestructura-fisica"></a>
