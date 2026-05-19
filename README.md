@@ -55,11 +55,11 @@ Automatización y Monitorización: Despliegue de procesos automatizados mediante
 
 La solución se fundamenta en tres pilares esenciales:
 
-## Seguridad: Implementación de protocolos cifrados, gestión rigurosa de roles y segmentación de red para garantizar la integridad y confidencialidad.
+**Seguridad:** Implementación de protocolos cifrados, gestión rigurosa de roles y segmentación de red para garantizar la integridad y confidencialidad.
 
-## Sostenibilidad: Diseño eficiente del hardware local con el objetivo de minimizar el consumo energético y evaluar la huella ecológica conforme al Módulo 1665.
+**Sostenibilidad:** Diseño eficiente del hardware local con el objetivo de minimizar el consumo energético y evaluar la huella ecológica conforme al Módulo 1665.
 
-## Escalabilidad: Arquitectura en la nube diseñada para adaptarse dinámicamente a picos de demanda en servicios multimedia.
+**Escalabilidad:** Arquitectura en la nube diseñada para adaptarse dinámicamente a picos de demanda en servicios multimedia.
 
 [⬆ Volver al índice](#-tabla-de-contenidos)
 
