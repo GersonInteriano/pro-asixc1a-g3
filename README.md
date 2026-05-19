@@ -76,8 +76,11 @@ La sala técnica se ha acondicionado siguiendo normativas de seguridad y eficien
 **- Climatización de Precisión:** Se implementa un sistema de aire acondicionado industrial manteniendo la temperatura constante entre 20°C y 22°C. El diseño utiliza la metodología de pasillos fríos y calientes para evitar puntos de calor en los equipos.
 
 **- Seguridad y Prevención:**
+
   **- Detección de Incendios:** Sensores ópticos de humo y temperatura.
+
   **- Extinción:** Sistema automático mediante gas inerte (Novec o CO2), que sofoca el fuego sin dañar los componentes electrónicos ni dejar residuos.
+  
   **- Control de Acceso:** Cerradura electrónica con registro de entrada para personal autorizado.
 
 ### 2.2. Diseño de Racks y Organización <a name="22-diseno-de-racks-y-organizacion"></a>
