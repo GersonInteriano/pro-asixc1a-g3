@@ -1,5 +1,5 @@
 <img width="1024" height="1536" alt="image" src="https://github.com/user-attachments/assets/75f17801-4b98-4781-934b-30af8fb42f61" />
-**sujeta a cambios**
+# sujeta a cambios
 
 
 # Proyecto Transversal: InnovateTech - Infraestructura Híbrida
