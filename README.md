@@ -165,14 +165,14 @@ Para una gestión eficiente, la infraestructura se divide en dos armarios Rack d
 #### Evidencias de Configuración de Red (Instancia EC2)
 
 Para permitir que el motor de base de datos MariaDB acepte conexiones externas provenientes de los servidores de aplicaciones de nuestros compañeros (dentro de la misma VPC o mediante accesos autorizados), modificamos la directiva de escucha por defecto.
-
+<br><br>
 <img width="938" height="246" alt="image" src="https://github.com/user-attachments/assets/08b3be57-6425-4e5e-9492-32d51b68d99a" />
-* Captura del archivo `/etc/mysql/mariadb.conf.d/50-server.cnf` donde se aprecia la modificación de la directiva `bind-address`. Al establecer el valor en `0.0.0.0`, obligamos al servicio a escuchar en todas las interfaces de red disponibles en la instancia EC2, superando la restricción local (`127.0.0.1`) que viene configurada de fábrica.
-
-
+<br><br>
+- Captura del archivo `/etc/mysql/mariadb.conf.d/50-server.cnf` donde se aprecia la modificación de la directiva `bind-address`. Al establecer el valor en `0.0.0.0`, obligamos al servicio a escuchar en todas las interfaces de red disponibles en la instancia EC2, superando la restricción local (`127.0.0.1`) que viene configurada de fábrica.
+<br><br>
 <img width="938" height="706" alt="image" src="https://github.com/user-attachments/assets/fac29104-e6ab-47f7-8ba3-b5086f436644" />
 
-* Evidencia del reinicio del demonio del SGBD mediante `sudo systemctl restart mariadb`. La captura muestra el comando `sudo systemctl status mariadb` con el flag `active (running)` en verde, confirmando que el cambio sintáctico es correcto y que el motor de base de datos ha levantado el servicio sin errores en el puerto estándar 3306.
+- Evidencia del reinicio del demonio del SGBD mediante `sudo systemctl restart mariadb`. La captura muestra el comando `sudo systemctl status mariadb` con el flag `active (running)` en verde, confirmando que el cambio sintáctico es correcto y que el motor de base de datos ha levantado el servicio sin errores en el puerto estándar 3306.
 
 
 ### 6.4. Script de Creación de Usuarios <a name="64-script-de-creacion-de-usuarios"></a>
