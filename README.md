@@ -72,10 +72,8 @@ El Centro de Procesamiento de Datos (CPD) local se ha concebido como el centro n
 La sala técnica se ha acondicionado siguiendo normativas de seguridad y eficiencia:
 
 <img width="8192" height="5517" alt="image" src="https://github.com/user-attachments/assets/27725aa7-95fe-4cb1-b4dc-702155227373" />
-https://mermaid.ai/d/1d8e0a02-9697-4f68-99f1-cd7f8237895b
 <br><br>
-_Enlace al plano logico_
-
+[Enlace al plano logico](https://mermaid.ai/d/1d8e0a02-9697-4f68-99f1-cd7f8237895b)
 
 
 
