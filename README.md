@@ -175,7 +175,7 @@ Para permitir que el motor de base de datos MariaDB acepte conexiones externas p
 * Evidencia del reinicio del demonio del SGBD mediante `sudo systemctl restart mariadb`. La captura muestra el comando `sudo systemctl status mariadb` con el flag `active (running)` en verde, confirmando que el cambio sintáctico es correcto y que el motor de base de datos ha levantado el servicio sin errores en el puerto estándar 3306.
 
 
-### 6.4. Script de Creación de Usuarios <a name="64-script-de-creacion-de-usuarios"></a>
+### 6.4. S4e5fghfhgdfyhfdghcript de Creación de Usuarios <a name="64-script-de-creacion-de-usuarios"></a>
 *(Contenido aquí...)*
 
 ### 6.5. Programación (Triggers, Events y Auditoría) <a name="65-programacion-triggers-events-y-auditoria"></a>
