@@ -71,6 +71,8 @@ El Centro de Procesamiento de Datos (CPD) local se ha concebido como el centro n
 
 La sala técnica se ha acondicionado siguiendo normativas de seguridad y eficiencia:
 
+
+
 - **Entorno Físico:** Ubicación en una sala interior, sin ventanas y con muros de resistencia al fuego. Se utiliza suelo técnico elevado (30 cm) para la canalización oculta de cables y falso techo para la extracción de aire caliente.
 
 - **Climatización de Precisión:** Se implementa un sistema de aire acondicionado industrial manteniendo la temperatura constante entre 20°C y 22°C. El diseño utiliza la metodología de pasillos fríos y calientes para evitar puntos de calor en los equipos.
