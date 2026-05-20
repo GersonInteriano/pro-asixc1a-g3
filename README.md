@@ -71,6 +71,8 @@ El Centro de Procesamiento de Datos (CPD) local se ha concebido como el centro n
 
 La sala técnica se ha acondicionado siguiendo normativas de seguridad y eficiencia:
 
+<img width="8192" height="5517" alt="image" src="https://github.com/user-attachments/assets/27725aa7-95fe-4cb1-b4dc-702155227373" />
+
 
 
 - **Entorno Físico:** Ubicación en una sala interior, sin ventanas y con muros de resistencia al fuego. Se utiliza suelo técnico elevado (30 cm) para la canalización oculta de cables y falso techo para la extracción de aire caliente.
