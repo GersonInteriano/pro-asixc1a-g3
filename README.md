@@ -73,7 +73,8 @@ La sala técnica se ha acondicionado siguiendo normativas de seguridad y eficien
 
 <img width="8192" height="5517" alt="image" src="https://github.com/user-attachments/assets/27725aa7-95fe-4cb1-b4dc-702155227373" />
 https://mermaid.ai/d/1d8e0a02-9697-4f68-99f1-cd7f8237895b
-*Enlace al codigo y visualización del plano logico*
+<br><br>
+_Enlace al plano logico_
 
 
 
