@@ -148,7 +148,7 @@ Tota la infraestructura s'ha desplegat a la regió `us-east-1` (N. Virginia) d'A
 
 ## 1. Infraestructura general
 
-La infraestructura d'InnovateTech es basa en **5 instàncies EC2** interconnectades dins d'una mateixa VPC. Cada instància té un rol específic i els serveis estan separats per màquina per garantir l'aïllament, la seguretat i la facilitat de manteniment.
+La infraestructura d'InnovateTech es basa en **4 instàncies EC2** interconnectades dins d'una mateixa VPC. Cada instància té un rol específic i els serveis estan separats per màquina per garantir l'aïllament, la seguretat i la facilitat de manteniment.
 
 La comunicació entre màquines es fa sempre per **IP privada**, que és permanent i no canvia entre sessions. Les IPs públiques (elàstiques) s'utilitzen únicament per a l'accés extern des d'internet.
 
@@ -158,7 +158,6 @@ La comunicació entre màquines es fa sempre per **IP privada**, que és permane
 | innovatetech-db | MariaDB | 10.0.0.208 | 100.50.111.243 |
 | innovatetech-logs | Rsyslog | 10.0.9.98 | 3.208.185.55 |
 | innovatetech-web | NGINX + SFTP | 10.0.7.135 | 35.171.63.1 |
-| innovatetech-media | Àudio/Vídeo/Jitsi | 10.0.7.77 | — |
 
 > 📸 **CAPTURA:** Panell EC2 d'AWS mostrant les 5 instàncies en estat "running" amb les seves IPs.
 
