@@ -549,13 +549,42 @@ FLUSH PRIVILEGES;
 
 ---
 
-## 13. Ansible — Automatització
-
-**Ansible** és una eina d'automatització de configuració que permet gestionar múltiples servidors des d'un únic node controlador, sense necessitat d'instal·lar cap agent a les màquines gestionades. Funciona per SSH, executant tasques definides en fitxers YAML anomenats **playbooks**.
-
-S'ha configurat `innovatetech-logs` (10.0.9.98) com a node controlador, des del qual s'automatitza la configuració de `innovatetech-web` i `innovatetech-ldap`. Per a l'autenticació entre màquines, s'ha generat un par de claus SSH al node controlador i s'ha copiat la clau pública a les màquines gestionades.
-
-### Inventari `/etc/ansible/hosts`
+## 13.Ansible — Automatització d'InnovateTech
+Projecte Transversal ASIXc1 · Curs 25/26
+---
+Introducció
+Ansible és una eina d'automatització de configuració que permet gestionar múltiples servidors des d'un únic node controlador, sense necessitat d'instal·lar cap agent a les màquines gestionades. Funciona per SSH, executant tasques definides en fitxers YAML anomenats playbooks.
+A InnovateTech s'ha configurat `innovatetech-logs` (10.0.9.98) com a node controlador, des del qual s'automatitza la configuració de `innovatetech-web` i `innovatetech-ldap`. A més, s'han creat playbooks capaços de crear instàncies EC2 des de zero, assignar-los una IP elàstica i configurar-los completament de forma automatitzada.
+---
+Estructura de fitxers
+```
+~/ansible/
+├── ansible.cfg                      # Configuració global d'Ansible
+├── update-credentials.sh            # Script per actualitzar credencials AWS
+├── inventory/
+│   └── hosts                        # Inventari de màquines gestionades
+├── roles/
+│   ├── provision/
+│   │   └── tasks/
+│   │       └── main.yml             # Crea EC2 i assigna IP elàstica
+│   ├── web/
+│   │   ├── tasks/
+│   │   │   └── main.yml             # Instal·la i configura NGINX + SFTP + LDAP
+│   │   └── files/
+│   │       └── index.html           # Pàgina web corporativa d'InnovateTech
+│   └── ldap/
+│       └── tasks/
+│           └── main.yml             # Instal·la i configura OpenLDAP
+├── playbook-web.yml                 # Configura servidor web existent
+├── playbook-ldap.yml                # Configura servidor LDAP existent
+├── playbook-eliminar-web.yml        # Elimina NGINX completament (simulació fallada)
+├── playbook-provision-web.yml       # Crea EC2 nova + configura servidor web
+└── playbook-provision-ldap.yml      # Crea EC2 nova + configura servidor LDAP
+```
+---
+Configuració
+Inventari `inventory/hosts`
+Defineix les màquines gestionades existents:
 ```ini
 [web]
 10.0.7.135
@@ -567,76 +596,157 @@ S'ha configurat `innovatetech-logs` (10.0.9.98) com a node controlador, des del 
 ansible_user=admintech
 ansible_ssh_private_key_file=/home/admintech/.ssh/id_rsa
 ```
+`ansible.cfg`
+```ini
+[defaults]
+inventory = inventory/hosts
+private_key_file = ~/.ssh/id_rsa
+remote_user = admintech
+host_key_checking = False
+deprecation_warnings = False
 
----
-
-### Playbook 1 — `playbook-eliminar-web.yml`
-
-Aquest playbook simula una **fallada catastròfica** del servidor web, eliminant completament NGINX i tots els seus fitxers de configuració. S'utilitza com a primer pas del procés de recuperació de desastres, per demostrar que el `playbook-web.yml` és capaç de restaurar el servei des de zero.
-
-```bash
-ansible-playbook ~/playbook-eliminar-web.yml
+[privilege_escalation]
+become = True
+become_method = sudo
+become_user = root
 ```
-
-> 📸 **CAPTURA:** Execució del playbook-eliminar-web.yml mostrant totes les tasques en "changed".
-
----
-
-### Playbook 2 — `playbook-web.yml`
-
-Aquest playbook desplega completament el servidor web des de zero, incloent-hi NGINX, la pàgina web corporativa, la integració amb LDAP per a l'autenticació SFTP i la configuració del chroot per departament.
-
-Gràcies a la **idempotència** d'Ansible, si el playbook s'executa en una màquina ja configurada no fa cap canvi innecessari; i si s'executa en una màquina nova, la configura completament de forma automàtica.
-
-```bash
-ansible-playbook ~/playbook-web.yml
+Credencials AWS
+Les comptes d'AWS Academy tenen credencials temporals que canvien cada sessió (cada ~4 hores). Per gestionar-ho de forma pràctica, les credencials es guarden a `~/.aws/credentials` i s'exporten com a variables d'entorn amb el script `update-credentials.sh`.
+Actualitzar credencials al inici de cada sessió:
+Al panell d'AWS Academy, clicar Show a "AWS CLI"
+Copiar les tres credencials al fitxer `~/.aws/credentials`:
 ```
-
-**Tasques principals:**
-1. Actualitzar paquets del sistema
-2. Instal·lar NGINX
-3. Crear el directori web `/var/www/innovatetech`
-4. Desplegar la pàgina web `index.html`
-5. Crear i activar el Virtual Host
-6. Preconfigurar i instal·lar `libpam-ldap` i `libnss-ldap` per autenticació LDAP
-7. Configurar `nsswitch.conf` per consultar LDAP
-8. Crear carpetes SFTP per departament
-9. Configurar regles chroot al `sshd_config`
-10. Habilitar `PasswordAuthentication` per als usuaris LDAP
-11. Reiniciar SSH i NGINX
-
-> 📸 **CAPTURA:** Execució del playbook-web.yml mostrant totes les tasques OK/changed sense errors.
-
-> 📸 **CAPTURA:** Pàgina web funcionant al navegador després de l'execució del playbook.
-
----
-
-### Playbook 3 — `playbook-ldap.yml`
-
-Aquest playbook instal·la i configura OpenLDAP completament des de zero, incloent-hi tota l'estructura organitzativa de l'empresa amb els seus departaments, grups i usuaris.
-
-Un dels reptes d'automatitzar la instal·lació de `slapd` és que normalment demana preguntes interactives (domini, contrasenya, etc.) que un script no pot respondre. Per solucionar-ho s'utilitza **`debconf`**, una eina d'Ubuntu que permet preconfigurar les respostes a aquestes preguntes abans d'instal·lar el paquet, de manera que la instal·lació es fa completament desatesa.
-
-```bash
-ansible-playbook ~/playbook-ldap.yml
+[default]
+aws_access_key_id=TU_ACCESS_KEY
+aws_secret_access_key=TU_SECRET_KEY
+aws_session_token=TU_SESSION_TOKEN
 ```
-
-**Tasques principals:**
-1. Desinstal·lar slapd completament amb `purge`
-2. Eliminar tots els fitxers residuals
-3. Preconfigurar domini, organització i contrasenya amb `debconf`
-4. Instal·lar `slapd`, `ldap-utils` i `python3-ldap`
-5. Iniciar i habilitar el servei
-6. Crear les OUs principals (usuarios, grupos)
-7. Crear les OUs per departament (vendes, suport, administracio, logistica)
-8. Crear els grups amb els seus GIDs
-9. Crear 12 usuaris (3 per departament) amb tots els atributs LDAP
-
-> 📸 **CAPTURA:** Execució del playbook-ldap.yml mostrant totes les tasques OK/changed sense errors.
-
-> 📸 **CAPTURA:** ldapsearch mostrant l'estructura completa creada pel playbook.
-
+Executar el script per exportar-les:
+```bash
+source ~/ansible/update-credentials.sh
+```
+Contingut de `update-credentials.sh`:
+```bash
+#!/bin/bash
+export AWS_ACCESS_KEY_ID=$(grep aws_access_key_id ~/.aws/credentials | cut -d= -f2 | tr -d ' ')
+export AWS_SECRET_ACCESS_KEY=$(grep aws_secret_access_key ~/.aws/credentials | cut -d= -f2 | tr -d ' ')
+export AWS_SESSION_TOKEN=$(grep aws_session_token ~/.aws/credentials | cut -d= -f2 | tr -d ' ')
+export AWS_DEFAULT_REGION=us-east-1
+echo "Credencials actualitzades: ${AWS_ACCESS_KEY_ID:0:10}..."
+```
 ---
+Rols
+Rol `provision`
+Aquest rol és el responsable de crear una nova instància EC2 a AWS i assignar-li una IP elàstica. S'utilitza com a primer pas dels playbooks de provisió.
+Paràmetres configurats:
+AMI: `ami-05cf1e9f73fbad2e2` (Ubuntu 24.04 LTS)
+Tipus: `t2.micro`
+Subxarxa: `subnet-022a882efecf162cd` (innovatetech-vpc)
+Security Group: `sg-053223c3c2a657989` (innovatetech-sg)
+Key pair: `innovatetech-key`
+Tasques:
+Crea la instància EC2 amb els paràmetres definits i espera que estigui en estat `running`
+Espera que el port SSH (22) estigui accessible
+Assigna una IP elàstica a la nova instància
+Mostra la IP elàstica assignada
+Rol `web`
+Desplega completament el servidor web des de zero. Inclou NGINX, la pàgina web corporativa, integració amb LDAP per a l'autenticació i SFTP amb chroot per departament.
+Tasques principals:
+Actualitza els paquets del sistema
+Instal·la NGINX
+Crea el directori `/var/www/innovatetech`
+Desplega la pàgina web `index.html`
+Crea i activa el Virtual Host
+Preconfigurar i instal·la `libpam-ldap`, `libnss-ldap` i `nscd`
+Configura `nsswitch.conf` per consultar LDAP
+Configura `ldap.conf` apuntant a `10.0.6.122`
+Crea carpetes SFTP per departament (`/sftp/vendes`, `/sftp/suport`, etc.)
+Configura regles chroot al `sshd_config` per grup
+Habilita `PasswordAuthentication` al fitxer `60-cloudimg-settings.conf`
+Reinicia SSH i NGINX
+Rol `ldap`
+Instal·la i configura OpenLDAP des de zero amb tota l'estructura organitzativa d'InnovateTech.
+Tasques principals:
+Desinstal·la `slapd` completament amb `purge`
+Elimina tots els fitxers residuals
+Preconfigura domini i contrasenya amb `debconf` (respon les preguntes interactives de forma automàtica)
+Instal·la `slapd`, `ldap-utils` i `python3-ldap`
+Inicia i habilita el servei
+Crea les OUs principals: `usuarios`, `grupos`
+Crea les OUs per departament: `vendes`, `suport`, `administracio`, `logistica`
+Crea els grups amb els seus GIDs (3000-3005)
+Crea 12 usuaris (3 per departament) amb tots els atributs LDAP
+---
+Playbooks
+`playbook-web.yml` i `playbook-ldap.yml`
+Configuren les màquines ja existents a l'inventari. Útils per reaplicar la configuració si cal.
+```bash
+ansible-playbook -i inventory/hosts playbook-web.yml
+ansible-playbook -i inventory/hosts playbook-ldap.yml
+```
+`playbook-eliminar-web.yml`
+Simula una fallada catastròfica eliminant completament NGINX. S'utilitza per demostrar la capacitat de recuperació de `playbook-provision-web.yml`.
+```bash
+ansible-playbook -i inventory/hosts playbook-eliminar-web.yml
+```
+`playbook-provision-web.yml`
+El playbook més complet. Crea una instància EC2 nova des de zero, li assigna una IP elàstica i la configura completament com a servidor web amb NGINX, SFTP i autenticació LDAP.
+```bash
+source ~/ansible/update-credentials.sh
+ansible-playbook playbook-provision-web.yml
+```
+Flux d'execució:
+Executa el rol `provision` → crea EC2 i assigna IP elàstica
+Afegeix dinàmicament la nova IP a l'inventari temporal
+Executa el rol `web` → configura completament el servidor
+`playbook-provision-ldap.yml`
+Crea una instància EC2 nova des de zero i la configura completament com a servidor LDAP amb tota l'estructura d'InnovateTech.
+```bash
+source ~/ansible/update-credentials.sh
+ansible-playbook playbook-provision-ldap.yml
+```
+---
+Demostració de recuperació de desastres
+Per demostrar la potència d'Ansible, es pot simular una fallada total del servidor web i recuperar-lo des de zero:
+```bash
+# 1. Eliminar completament NGINX (simulació de fallada)
+ansible-playbook -i inventory/hosts playbook-eliminar-web.yml
+
+# 2. Verificar que la web no funciona
+curl http://35.171.63.1  # Ha de fallar
+
+# 3. Recuperar el servei automàticament
+ansible-playbook -i inventory/hosts playbook-web.yml
+
+# 4. Verificar que la web funciona de nou
+curl http://35.171.63.1  # Ha de tornar el HTML
+```
+O bé, crear una instància completament nova:
+```bash
+source ~/ansible/update-credentials.sh
+ansible-playbook playbook-provision-web.yml
+# La nova instància queda completament configurada en ~5 minuts
+```
+---
+Problemes i solucions
+Problema — NoCredentialsError en els playbooks de provisió
+Causa: El mòdul `amazon.aws` d'Ansible usa la seva pròpia versió de boto3, que no llegeix automàticament les variables d'entorn exportades amb `source`.
+Solució: Passar les credencials explícitament als mòduls via `lookup('env', ...)` i exportar-les prèviament amb `source ~/ansible/update-credentials.sh`.
+Problema — `skipping: no hosts matched` al segon play
+Causa: La IP de la nova instància creada pel rol `provision` no estava a l'inventari, per la qual cosa Ansible no sabia on connectar-se per configurar-la.
+Solució: Usar `add_host` als `post_tasks` del primer play per afegir dinàmicament la nova IP a un grup temporal `nova_instancia`, que s'usa com a `hosts` al segon play.
+Problema — `AddressLimitExceeded` en assignar IP elàstica
+Causa: Les comptes d'AWS Academy tenen un límit de 5 IPs elàstiques simultànies.
+Solució: Alliberar les IPs elàstiques de les instàncies de prova abans d'executar els playbooks de provisió.
+Problema — Permission denied en connectar a la nova instància
+Causa: Ansible intentava connectar amb `~/.ssh/id_rsa` però la nova instància només accepta `innovatetech-key.pem`.
+Solució: Copiar el fitxer `.pem` al servidor de logs i especificar-lo a `ansible_ssh_private_key_file` al `add_host`.
+---
+> 📸 **CAPTURA:** Execució de `playbook-provision-web.yml` mostrant totes les tasques completades.
+> 📸 **CAPTURA:** Pàgina web funcionant a la nova instància creada per Ansible.
+> 📸 **CAPTURA:** Execució de `playbook-provision-ldap.yml` mostrant totes les tasques completades.
+> 📸 **CAPTURA:** ldapsearch a la nova instància LDAP mostrant l'estructura creada per Ansible.
+
 
 ## 14. Problemes i solucions
 
