@@ -159,7 +159,7 @@ La comunicació entre màquines es fa sempre per **IP privada**, que és permane
 | innovatetech-logs | Rsyslog | 10.0.9.98 | 3.208.185.55 |
 | innovatetech-web | NGINX + SFTP | 10.0.7.135 | 35.171.63.1 |
 
-> 📸 **CAPTURA:** Panell EC2 d'AWS mostrant les 5 instàncies en estat "running" amb les seves IPs.
+Proyecto/Parte Teorica/Oussama/ec2run
 
 ---
 ## 3.2. Par de claus SSH
