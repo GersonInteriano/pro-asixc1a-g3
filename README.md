@@ -159,7 +159,8 @@ La comunicació entre màquines es fa sempre per **IP privada**, que és permane
 | innovatetech-logs | Rsyslog | 10.0.9.98 | 3.208.185.55 |
 | innovatetech-web | NGINX + SFTP | 10.0.7.135 | 35.171.63.1 |
 
-Proyecto/Parte Teorica/Oussama/ec2run
+<img width="900" height="346" alt="image" src="https://github.com/user-attachments/assets/b873146f-4d17-46af-b7cc-565107bd2e72" />
+
 
 ---
 ## 3.2. Par de claus SSH
