@@ -711,39 +711,304 @@ ssh -i ~/Baixades/innovatetech-key.pem admintech@3.208.185.55 \
 
 
 
-## 6. Diseño e Implementación de la Base de Datos <a name="6-diseno-e-implementacion-de-la-base-de-datos"></a>
+## 6. Disseny e Implementació de la Base de Dades
 
-### 6.1. Diseño Conceptual (E/R) <a name="61-diseno-conceptual-er"></a>
-*(Contenido aquí...)*
+### 6.1. Disseny Conceptual (E/R)
 
-### 6.2. Diseño Lógico (Relacional) <a name="62-diseno-logico-relacional"></a>
-*(Contenido aquí...)*
+El diagrama Entitat-Relació representa les 14 entitats de la base de dades d'InnovateTech, els seus atributs principals i les relacions entre elles amb la cardinalitat corresponent.
 
-### 6.3. Instalación y Securización de MariaDB <a name="63-instalacion-y-securizacion-de-mariadb"></a>
-*(Contenido aquí...)*
+> 📸 **CAPTURA:** Diagrama E/R exportat de dbdiagram.io mostrant totes les entitats i relacions.
 
-#### Evidencias de Configuración de Red (Instancia EC2)
+---
 
-Para permitir que el motor de base de datos MariaDB acepte conexiones externas provenientes de los servidores de aplicaciones de nuestros compañeros (dentro de la misma VPC o mediante accesos autorizados), modificamos la directiva de escucha por defecto.
-<br><br>
-<img width="938" height="246" alt="image" src="https://github.com/user-attachments/assets/82b11735-8ecf-47b3-a249-38a446847d54" />
-<br><br>
+### 6.2. Model Relacional
 
-- Captura del archivo `/etc/mysql/mariadb.conf.d/50-server.cnf` donde se aprecia la modificación de la directiva `bind-address`. Al establecer el valor en `0.0.0.0`, obligamos al servicio a escuchar en todas las interfaces de red disponibles en la instancia EC2, superando la restricción local (`127.0.0.1`) que viene configurada de fábrica.
-<br><br>
+A partir del diagrama E/R s'ha obtingut l'esquema relacional complet. Les claus primàries s'indiquen amb **PK** i les foranes amb **FK**.
 
-<img width="938" height="706" alt="image" src="https://github.com/user-attachments/assets/245f85ef-15a1-481c-b2a2-cc4b50bcce23" />
-<br><br>
+```
+DEPARTAMENTS (codi PK, nom, telefon)
 
-- Evidencia del reinicio del demonio del SGBD mediante `sudo systemctl restart mariadb`. La captura muestra el comando `sudo systemctl status mariadb` con el flag `active (running)` en verde, confirmando que el cambio sintáctico es correcto y que el motor de base de datos ha levantado el servicio sin errores en el puerto estándar 3306.
+EMPLEATS (dni PK, nom, cognoms, adreca, telefon,
+          codi_dept FK → DEPARTAMENTS.codi)
 
+CLIENTS (id PK, nom, email, telefon, empresa)
 
-### 6.4. Script de Creación de Usuarios <a name="64-script-de-creacion-de-usuarios"></a>
-*(Contenido aquí...)*
+CONFIG_QUALITAT (id PK, nivell, resolucio_video, bitrate_audio, amplada_banda_min)
 
-### 6.5. Programación (Triggers, Events y Auditoría) <a name="65-programacion-triggers-events-y-auditoria"></a>
-*(Contenido aquí...)*
-[⬆ Volver al índice](#-tabla-de-contenidos)
+USUARIS (id PK, uid_ldap, nom_complet, email, extensio, estat, tipus,
+         dni_empleat FK → EMPLEATS.dni,
+         id_client FK → CLIENTS.id,
+         id_config FK → CONFIG_QUALITAT.id,
+         url_videotrucada)
+
+PRODUCTES (id PK, nom, descripcio, preu, tipus)
+
+COMANDES (id PK, data, estat, quantitat,
+          id_client FK → CLIENTS.id,
+          id_producte FK → PRODUCTES.id)
+
+CISTELL (id PK, quantitat, data_afegit,
+         id_client FK → CLIENTS.id,
+         id_producte FK → PRODUCTES.id)
+
+CATALEG_VIDEOS (id PK, titol, descripcio, categoria, durada, data_publicacio, url_streaming)
+
+TRUCADES (id PK, inici, fi, durada, puntuacio, comentari,
+          id_origen FK → USUARIS.id,
+          id_desti FK → USUARIS.id,
+          id_config FK → CONFIG_QUALITAT.id)
+
+MESURES_AMPLADA_BANDA (id PK, equip_mesurat, data_hora, baixada, pujada, latencia, resultat, notes,
+                       id_operari FK → USUARIS.id)
+
+CONFIG_SERVIDOR (id PK, parametre, valor, descripcio)
+
+TAULA_AVISOS (id PK, usuari_db, taula_afectada, operacio, data_hora, detalls)
+
+CONTROL_BACKUP (id PK, data_hora, taules_incloses, resultat)
+```
+
+> 📸 **CAPTURA:** Resultat de `SHOW TABLES` a MariaDB mostrant les 14 taules creades.
+
+---
+
+### 6.3. Instal·lació i Securització de MariaDB
+
+S'ha escollit **MariaDB 10.11** com a SGBD per la seva compatibilitat amb MySQL, lleugeresa (important en una instància t2.micro amb 1 GB de RAM) i per ser de codi obert sense restriccions de llicència.
+
+**Instal·lació:**
+
+```bash
+sudo apt install mariadb-server -y
+sudo mysql_secure_installation
+```
+
+**Configuració per accés remot** (`/etc/mysql/mariadb.conf.d/50-server.cnf`):
+
+```
+bind-address = 0.0.0.0
+event_scheduler = ON
+default-time-zone = 'Europe/Madrid'
+```
+
+**Creació de l'usuari d'administració:**
+
+```sql
+CREATE USER 'admin'@'%' IDENTIFIED BY '12345';
+GRANT ALL PRIVILEGES ON *.* TO 'admin'@'%' WITH GRANT OPTION;
+GRANT FILE ON *.* TO 'admin'@'%';
+FLUSH PRIVILEGES;
+```
+
+**Dades de connexió:**
+| Paràmetre | Valor |
+|-----------|-------|
+| Host intern | `10.0.0.208` |
+| Host extern | `100.50.111.243` |
+| Port | `3306` |
+| Usuari | `admin` |
+| Base de dades | `innovatetech` |
+
+> 📸 **CAPTURA:** `systemctl status mariadb` mostrant el servei actiu.
+> 📸 **CAPTURA:** `SHOW DATABASES` mostrant la base de dades `innovatetech`.
+
+---
+
+### 6.4. Script de Creació d'Usuaris
+
+S'ha creat un script Bash (`create_users.sh`) que automatitza la creació d'usuaris a MariaDB. L'script demana interactivament les dades mínimes, valida el rol, comprova si l'usuari ja existeix i genera un fitxer `.sql` d'auditoria.
+
+**Funcionalitats:**
+- Creació interactiva d'un o més usuaris
+- Validació del rol (admin, vendes, administracio, treballador)
+- Detecció d'usuaris duplicats
+- Generació automàtica de `usuaris_creats.sql`
+- `GRANT FILE` automàtic per als usuaris amb rol `admin`
+
+**Script `~/scripts/create_users.sh`:**
+
+```bash
+#!/bin/bash
+DB_HOST="localhost"
+DB_PORT="3306"
+DB_NAME="innovatetech"
+DB_ADMIN="admin"
+DB_PASS="12345"
+OUTPUT_FILE="usuaris_creats.sql"
+ROLS_VALIDS=("admin" "vendes" "administracio" "treballador")
+
+rol_valid() {
+    local rol=$1
+    for r in "${ROLS_VALIDS[@]}"; do
+        if [[ "$r" == "$rol" ]]; then return 0; fi
+    done
+    return 1
+}
+
+usuari_existeix() {
+    local usuari=$1
+    local host=$2
+    local resultat=$(mysql -h "$DB_HOST" -P "$DB_PORT" \
+        -u "$DB_ADMIN" -p"$DB_PASS" \
+        -sse "SELECT COUNT(*) FROM mysql.user
+              WHERE User='$usuari' AND Host='$host';" 2>/dev/null)
+    [[ "$resultat" -gt 0 ]]
+}
+
+crear_usuari() {
+    local usuari=$1
+    local contrasenya=$2
+    local rol=$3
+    local host=$4
+
+    if usuari_existeix "$usuari" "$host"; then
+        echo "[ERROR] L'usuari '$usuari'@'$host' ja existeix. Saltant..."
+        echo "-- [ERROR] Usuari '$usuari'@'$host' ja existia." >> "$OUTPUT_FILE"
+        return 1
+    fi
+
+    if ! rol_valid "$rol"; then
+        echo "[ERROR] El rol '$rol' no és vàlid."
+        echo "-- [ERROR] Rol '$rol' no vàlid per a '$usuari'." >> "$OUTPUT_FILE"
+        return 1
+    fi
+
+    local sql_create="CREATE USER '$usuari'@'$host' IDENTIFIED BY '$contrasenya';"
+    local sql_grant="GRANT '$rol' TO '$usuari'@'$host';"
+    local sql_default="SET DEFAULT ROLE '$rol' FOR '$usuari'@'$host';"
+    local sql_file=""
+    if [[ "$rol" == "admin" ]]; then
+        sql_file="GRANT FILE ON *.* TO '$usuari'@'$host';"
+    fi
+    local sql_flush="FLUSH PRIVILEGES;"
+
+    mysql -h "$DB_HOST" -P "$DB_PORT" \
+        -u "$DB_ADMIN" -p"$DB_PASS" \
+        -e "$sql_create $sql_grant $sql_default ${sql_file:+$sql_file} $sql_flush" 2>/dev/null
+
+    if [[ $? -eq 0 ]]; then
+        echo "[OK] Usuari '$usuari'@'$host' creat amb rol '$rol'."
+        echo "" >> "$OUTPUT_FILE"
+        echo "-- Usuari: $usuari | Rol: $rol | Host: $host" >> "$OUTPUT_FILE"
+        echo "$sql_create" >> "$OUTPUT_FILE"
+        echo "$sql_grant" >> "$OUTPUT_FILE"
+        echo "$sql_default" >> "$OUTPUT_FILE"
+        [[ -n "$sql_file" ]] && echo "$sql_file" >> "$OUTPUT_FILE"
+        echo "$sql_flush" >> "$OUTPUT_FILE"
+    else
+        echo "[ERROR] No s'ha pogut crear '$usuari'@'$host'."
+        return 1
+    fi
+}
+
+echo "-- INNOVATETECH - Usuaris generats automàticament" > "$OUTPUT_FILE"
+echo "-- Data: $(date '+%Y-%m-%d %H:%M:%S')" >> "$OUTPUT_FILE"
+
+echo "============================================"
+echo " INNOVATETECH - Creació d'usuaris MariaDB"
+echo "============================================"
+echo "Rols disponibles: ${ROLS_VALIDS[*]}"
+
+while true; do
+    read -p "Nom d'usuari (o 'sortir' per acabar): " usuari
+    [[ "$usuari" == "sortir" ]] && break
+    [[ -z "$usuari" ]] && echo "[ERROR] Nom buit." && continue
+    read -p "Contrasenya: " contrasenya
+    [[ -z "$contrasenya" ]] && echo "[ERROR] Contrasenya buida." && continue
+    read -p "Rol (${ROLS_VALIDS[*]}): " rol
+    [[ -z "$rol" ]] && echo "[ERROR] Rol buit." && continue
+    read -p "Host (per defecte '%'): " host
+    [[ -z "$host" ]] && host="%"
+    crear_usuari "$usuari" "$contrasenya" "$rol" "$host"
+done
+
+echo "Fitxer SQL generat: $OUTPUT_FILE"
+```
+
+> 📸 **CAPTURA:** Execució de `create_users.sh` creant un usuari amb rol `admin` mostrant el missatge `[OK]`.
+> 📸 **CAPTURA:** Contingut de `usuaris_creats.sql` mostrant les sentències `CREATE USER`, `GRANT` i `GRANT FILE`.
+
+---
+
+### 6.5. Rols i Permisos
+
+S'han creat 4 rols a MariaDB amb permisos diferenciats seguint el principi de mínim privilegi:
+
+| Rol | Permisos |
+|-----|----------|
+| `admin` | `ALL PRIVILEGES` + `GRANT FILE` |
+| `vendes` | `SELECT/INSERT/UPDATE` sobre Clients, Comandes, Productes, Trucades, Usuaris, Config_Qualitat |
+| `administracio` | `SELECT/INSERT/UPDATE` sobre Empleats, Departaments, Usuaris, Config_Qualitat, Mesures_Amplada_Banda |
+| `treballador` | `SELECT` sobre Productes, Cataleg_Videos, Config_Qualitat + `SELECT/INSERT` sobre Trucades |
+
+**Creació dels rols:**
+
+```sql
+CREATE ROLE 'admin';
+CREATE ROLE 'vendes';
+CREATE ROLE 'administracio';
+CREATE ROLE 'treballador';
+```
+
+> 📸 **CAPTURA:** `SELECT Host, User, is_role FROM mysql.user WHERE is_role='Y'` mostrant els 4 rols.
+> 📸 **CAPTURA:** `SHOW GRANTS FOR 'vendes'` i `SHOW GRANTS FOR 'administracio'` mostrant els permisos diferenciats.
+
+---
+
+### 6.6. Triggers, Events i Auditoria
+
+S'han implementat 6 triggers i 1 event periòdic per garantir la seguretat, el control d'accés i les còpies de seguretat automàtiques.
+
+#### Triggers implementats
+
+**1. `trg_bloqueig_usuari`** — Impedeix trucades si l'usuari origen o destí està bloquejat.
+
+**2. `trg_quota_minuts_mensuals`** — Bloqueja noves trucades si l'usuari supera els 600 minuts mensuals.
+
+**3. `trg_quota_trucades_diaries`** — Bloqueja noves trucades si l'usuari supera les 20 trucades diàries.
+
+**4. `trg_audit_empleats_update`** — Registra a `Taula_Avisos` qualsevol intent de modificar `Empleats` per part d'un usuari sense rol `admin` o `administracio`.
+
+**5. `trg_audit_comandes_delete`** — Registra i bloqueja intents d'eliminar registres de `Comandes` per part d'usuaris no autoritzats.
+
+**6. `trg_audit_trucades_admin`** — Registra i bloqueja intents del rol `administracio` d'insertar a la taula `Trucades`.
+
+Tots els intents bloquejats queden registrats a la taula `Taula_Avisos` amb: usuari, taula afectada, operació, data/hora i detalls.
+
+> 📸 **CAPTURA:** `SELECT * FROM Taula_Avisos` mostrant registres reals de triggers disparats.
+
+#### Event periòdic de backup
+
+L'event `evt_backup_diari` s'executa cada dia a les 02:00 i exporta les taules crítiques en format CSV a `/var/backups/innovatetech/`.
+
+**Taules exportades:** `Empleats`, `Clients`, `Comandes`, `Trucades`
+
+**Registre:** Cada execució queda registrada a la taula `Control_Backup` amb data, taules incloses i resultat.
+
+**Configuració:**
+- Periodicitat: diària a les 02:00 (franja de mínim tràfic)
+- Format: CSV amb separador `;` i camps entre cometes
+- Nom de fitxer: `taula_YYYYMMDD_HHMMSS.csv`
+
+```sql
+SHOW EVENTS FROM innovatetech;
+SHOW VARIABLES LIKE 'event_scheduler';
+```
+
+> 📸 **CAPTURA:** `SHOW EVENTS FROM innovatetech` mostrant `evt_backup_diari` amb estat `ENABLED`.
+> 📸 **CAPTURA:** `SHOW VARIABLES LIKE 'event_scheduler'` mostrant valor `ON`.
+
+---
+
+### 6.7. Incidències i Solucions
+
+**Problema: ERROR 1901 — CHECK clause no suportat**
+
+En crear les taules `Usuaris` i `Trucades`, MariaDB va retornar l'error `ERROR 1901 (HY000): Function or expression cannot be used in the CHECK clause` en intentar validar condicions creuades entre columnes nullables.
+
+**Causa:** MariaDB no admet restriccions `CHECK` que comparin columnes entre si directament a la definició de la taula.
+
+**Solució:** Es van eliminar les restriccions `CHECK` de la definició estructural de les taules i es va traslladar aquesta lògica de validació als **triggers** (secció 6.6), que és la capa adequada per a validacions complexes en MariaDB.
 
 ## 7. Comprobaciones de Rendimiento y Seguridad <a name="7-comprobaciones-de-rendimiento-y-seguridad"></a>
 *(Contenido aquí...)*
