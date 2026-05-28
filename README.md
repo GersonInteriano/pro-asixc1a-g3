@@ -107,13 +107,246 @@ Orientado al soporte administrativo y la protección de datos local:
 - **Consola KVM:** Para la administración física de los servidores.
 - **Servidor de Monitorización:** Supervisión en tiempo real de temperatura, consumo y estado de servicios.
 
-### 2.3. Infraestructura Eléctrica (SAI)
+# 1.3 Infraestructura elèctrica i SAI — Arquitectura híbrida AWS
 
-*(Contenido aquí...)*
+## Descripció general
 
-### 2.4. Seguridad Física y PRL
+La major part dels serveis corporatius son a AWS, el CPD local d’InnovateTech adopta un model híbrid lleuger. La infraestructura local ja no allotja serveis crítics de producció ni aplicacions principals, sinó únicament serveis de suport, administració, seguretat i còpies de seguretat.
 
-*(Contenido aquí...)*
+Segons l’arquitectura definida, els serveis principals (LDAP, streaming, web, base de dades i logs) s’executen sobre instàncies EC2 dins la VPC corporativa d’AWS, mentre que el CPD local manté únicament:
+
+* Firewall i connectivitat híbrida amb AWS.
+* Switch core i segmentació VLAN.
+* Servidor d’administració local.
+* NAS corporatiu de backups.
+* Sistema de monitorització.
+* Consola KVM i electrònica auxiliar.
+
+Aquesta nova arquitectura redueix considerablement el consum elèctric, la necessitat de refrigeració i la complexitat operativa del CPD físic.
+
+---
+
+## Infraestructura elèctrica simplificada
+
+La infraestructura elèctrica continua mantenint criteris professionals de redundància i alta disponibilitat, encara que adaptats al nou volum real de càrrega.
+
+### Alimentació redundant
+
+El CPD disposa de:
+
+* Doble escomesa elèctrica (Feed A i Feed B).
+* Quadro General de Distribució (QGD).
+* Dues línies redundants:
+  * Línia A
+  * Línia B
+
+Cada línia alimenta un SAI independent:
+
+* SAI A
+* SAI B
+
+La distribució elèctrica es realitza mitjançant PDUs redundants instal·lades al rack principal.
+
+---
+
+## Equipament
+
+### Rack 1 — Networking i Seguretat
+
+**Firewall en alta disponibilitat**
+
+Model proposat:
+* 2 × FortiGate 60F HA
+
+Consum operatiu estimat:
+* 18 W cadascun
+
+**Switch Core Layer 3**
+
+Model:
+* Aruba CX 6100 24G 4SFP+
+
+Consum estimat:
+* 45 W
+
+**Router / SD-WAN**
+
+Model:
+* Ubiquiti EdgeRouter 4
+
+Consum estimat:
+* 11 W
+
+**Electrònica auxiliar**
+
+Patch panels, SFP+, ventilació i gestió:
+* 20 W
+
+---
+
+### Rack 2 — Gestió i Administració
+
+**Servidor d’administració local**
+
+Model:
+* Dell PowerEdge R250
+
+Funcions:
+* Controlador de domini secundari
+* Gestió interna
+
+Consum operatiu estimat:
+* 110 W
+
+**NAS corporatiu**
+
+Model:
+* QNAP TS-453D
+
+Consum operatiu estimat:
+* 35 W
+
+**Servidor de monitorització**
+
+Model:
+* Mini PC Intel NUC / appliance monitorització
+
+Consum operatiu estimat:
+* 25 W
+
+**Consola KVM + perifèrics**
+
+Consum estimat:
+* 10 W
+
+---
+
+## Distribució de càrregues als SAI
+
+### SAI A
+
+| Equip                  | Consum |
+| ---------------------- | ------ |
+| Firewall principal     | 18 W   |
+| Switch Core            | 45 W   |
+| Servidor administració | 110 W  |
+| Monitorització         | 25 W   |
+| Electrònica auxiliar   | 20 W   |
+
+**Total SAI A**
+P_L_SAI_A = 218 W
+
+Aplicant marge de seguretat del 25%:
+P_{SAI\ A}=218\cdot1.25=272.5\ W
+
+**Potència final de disseny**
+P_L_SAI_A = 272,5 W
+
+---
+
+### SAI B
+
+| Equip               | Consum |
+| ------------------- | ------ |
+| Firewall secundari  | 18 W   |
+| Router EdgeRouter 4 | 11 W   |
+| NAS corporatiu      | 35 W   |
+| KVM                 | 10 W   |
+
+**Total SAI B**
+P_L_SAI_B = 74 W
+
+Aplicant marge de seguretat del 25%:
+P_{SAI\ B}=74\cdot1.25=92.5\ W
+
+**Potència final de disseny**
+P_L_SAI_B = 92,5 W
+
+---
+
+## Sistema SAI seleccionat
+
+Model recomanat:
+* APC Smart-UPS SMTL1500RMI3UC
+* Tecnologia Lithium-Ion
+* 1500 VA / 1350 W
+* Rack 2U
+* Gestió SNMP integrada
+
+Aquest model proporciona una autonomia molt superior als 20 minuts requerits gràcies a la reducció dràstica de càrrega després de la migració a AWS.
+
+---
+
+## Paràmetres utilitzats per al càlcul
+
+| Paràmetre  | Valor |
+| ---------- | ----- |
+| V_b_total  | 48 V  |
+| η_inv      | 0,90  |
+| DoD        | 0,90  |
+| f_p(I_d)   | 0,95  |
+| f_t(T)     | 1     |
+| f_e        | 1     |
+| f_c        | 0,99  |
+| C_n        | 3,10 Ah |
+
+Energia nominal estimada:
+E_{bat}=3.10\ Ah\cdot48\ V=148.8\ Wh
+
+Energia neta lliurable:
+E_{neta}=148.8\cdot0.90\cdot0.90\cdot0.95\cdot1\cdot1\cdot0.99\approx113.36\ Wh
+
+---
+
+## Càlcul d’autonomia
+
+### Autonomia SAI A
+
+t_{SAI\ A}=\frac{113.36}{272.5}=0.416\ h
+
+Conversió a minuts:
+0.416\cdot60\approx24.96\ min
+
+**Resultat final**
+Autonomia estimada SAI A:
+* 25 minuts aproximadament.
+
+---
+
+### Autonomia SAI B
+
+t_{SAI\ B}=\frac{113.36}{92.5}=1.225\ h
+
+Conversió a minuts:
+1.225\cdot60\approx73.5\ min
+
+**Resultat final**
+Autonomia estimada SAI B:
+* 73 minuts aproximadament.
+
+---
+
+## Conclusió tècnica
+
+La migració de la infraestructura principal a AWS ha reduït dràsticament la dependència del CPD físic local. El nou disseny manté únicament serveis essencials de:
+
+* administració,
+* connectivitat,
+* seguretat,
+* monitorització,
+* backups.
+
+Aquesta simplificació permet:
+
+* Reduir consum energètic.
+* Reduir necessitats de refrigeració.
+* Augmentar l’autonomia dels SAI.
+* Simplificar el manteniment.
+* Reduir riscos operatius.
+* Mantenir alta disponibilitat híbrida amb AWS.
+
+Els càlculs realitzats demostren que el sistema APC SMTL1500RMI3UC cobreix àmpliament el requisit mínim de 20 minuts d’autonomia, especialment després de la reducció de càrrega derivada de la migració cloud.
+
 
 [⬆ Volver al índice](#tabla-de-contenidos)
 
