@@ -76,40 +76,85 @@ La sala técnica se ha acondicionado siguiendo normativas de seguridad y eficien
 _[Enlace al plano logico](https://mermaid.ai/d/1d8e0a02-9697-4f68-99f1-cd7f8237895b)_
 
 
-
-
-- **Entorno Físico:** Ubicación en una sala interior, sin ventanas y con muros de resistencia al fuego. Se utiliza suelo técnico elevado (30 cm) para la canalización oculta de cables y falso techo para la extracción de aire caliente.
-
-- **Climatización de Precisión:** Se implementa un sistema de aire acondicionado industrial manteniendo la temperatura constante entre 20°C y 22°C. El diseño utiliza la metodología de pasillos fríos y calientes para evitar puntos de calor en los equipos.
-
-- **Seguridad y Prevención:**
-
-  - **Detección de Incendios:** Sensores ópticos de humo y temperatura.
-
-  - **Extinción:** Sistema automático mediante gas inerte (Novec o CO2), que sofoca el fuego sin dañar los componentes electrónicos ni dejar residuos.
-  
-  - **Control de Acceso:** Cerradura electrónica con registro de entrada para personal autorizado.
-
+## 2. Propuesta de CPD Local (Infraestructura Física) <a name="2-propuesta-de-cpd-local-infraestructura-fisica"></a>
+ 
+El Centro de Procesamiento de Datos (CPD) local se ha concebido como el centro neurálgico de administración y conectividad de InnovateTech. Su diseño físico prioriza la integridad del hardware y la continuidad del servicio.
+ 
+La arquitectura híbrida adoptada asume que todos los servicios críticos de producción —aplicaciones web, streaming, bases de datos, LDAP y gestión de logs— residen en AWS, mientras que el CPD local actúa como nodo de administración, monitorización y redundancia de datos. Esta decisión de diseño reduce el dimensionamiento físico del CPD, pero no exime de exigir los mismos estándares de disponibilidad y seguridad que un centro de datos convencional.
+ 
+---
+ 
+### 2.1. Ubicación y Acondicionamiento <a name="21-ubicacion-y-acondicionamiento"></a>
+ 
+La infraestructura física de InnovateTech se encuentra alojada en un edificio de varias plantas. La planta destinada al CPD local alberga los elementos de red, administración y backup, mientras que el resto de plantas concentran los puestos de trabajo de los distintos departamentos de la empresa. Esta distribución exige una arquitectura de cableado cuidadosamente planificada que garantice conectividad de alta calidad tanto hacia los servicios en la nube de AWS como entre los propios equipos locales.
+ 
+Desde el punto de vista de la **seguridad física**, la sala no dispondrá de ventanas ni señalización que identifique su contenido. El diseño de puertas y paredes se integrará con el resto del edificio, empleando materiales resistentes que mantengan la discreción. Las rutas de acceso no serán evidentes ni estarán conectadas con los accesos principales. El control de acceso se implementará mediante cerradura electrónica con registro de entradas para personal autorizado, complementado con videovigilancia CCTV que cubrirá toda la zona de infraestructura.
+ 
+Para el **acondicionamiento térmico**, se implementará un sistema de aire acondicionado de precisión que mantendrá la temperatura constante entre **20 °C y 22 °C**. El diseño aplica la metodología de pasillos fríos y calientes: el aire frío es impulsado a través del suelo técnico elevado (30 cm) hacia los frontales de los racks, mientras que el aire caliente es extraído por la parte posterior y recirculado hacia las unidades de climatización a través del falso techo técnico. Para los servicios desplegados en la nube, la climatización es responsabilidad directa del proveedor.
+ 
+El **suelo técnico elevado** (30 cm) permitirá la canalización ordenada del cableado y de los sistemas de climatización de forma segura y flexible. El **falso techo técnico** facilitará la instalación de equipos de ventilación, iluminación y la distribución del retorno de aire caliente, manteniendo la sala organizada y accesible para el mantenimiento.
+ 
+El sistema de **detección de incendios** contará con sensores ópticos de humo y sensores de temperatura y humedad. La extinción automática se realizará mediante **gas inerte (Novec o CO₂)**, que sofoca el fuego sin dañar los componentes electrónicos ni dejar residuos.
+ 
+**Cableado e infraestructura de red**
+ 
+Una conectividad robusta y bien estructurada es condición indispensable para que InnovateTech pueda operar con fluidez tanto en su entorno local como sobre los servicios de AWS. La planificación del cableado abarca tres niveles diferenciados: el cableado interno del CPD, la distribución horizontal hacia las plantas de trabajo y el enlace de salida a internet.
+ 
+Para las conexiones internas dentro del CPD se utilizará **fibra óptica monomodo**, que ofrece anchos de banda muy elevados y latencias mínimas, siendo la opción idónea para los uplinks entre switches y para cualquier conexión que requiera alta velocidad en distancias medias o largas dentro del edificio. Para las conexiones directas entre servidores, patch panels y switches de acceso se empleará **cableado estructurado Cat 7**, garantizando velocidades de **10 Gbps** con una excelente inmunidad al ruido electromagnético gracias a su apantallamiento individual por par y global (S/FTP).
+ 
+La distribución del cableado hacia las plantas de trabajo seguirá un diseño de red jerárquica con capa de acceso, distribución y núcleo, canalizando el tráfico de los distintos departamentos de forma segmentada mediante VLANs. Todo el cableado estará **etiquetado e inventariado** para facilitar el mantenimiento y reducir los tiempos de intervención ante incidencias. La separación física entre cableado de datos y cableado eléctrico será obligatoria en todas las canalizaciones, evitando interferencias electromagnéticas que puedan degradar el rendimiento de la red.
+ 
+Para la conectividad con AWS, se dispondrá de acceso a internet de alta capacidad con **redundancia de proveedor**, garantizando rutas alternativas de conexión que mantengan la disponibilidad en caso de fallo de uno de los enlaces. Con el objetivo de minimizar la latencia y maximizar la fiabilidad del tráfico hacia la nube, se valorará la implementación de tecnologías **SD-WAN**, que permiten gestionar de forma inteligente el tráfico entre múltiples enlaces y priorizar los flujos críticos de negocio. Esta aproximación es funcionalmente equivalente, en un entorno empresarial de escala media, a los principios de baja latencia y alta fiabilidad que ofrecen tecnologías como MPLS o las conexiones dedicadas de fibra óptica en escenarios de múltiples CPDs internacionales. El túnel **VPN Site-to-Site** cifrado garantizará la confidencialidad e integridad de todas las comunicaciones entre el CPD local y la VPC corporativa en AWS.
+ 
+[⬆ Volver al índice](#-tabla-de-contenidos)
+ 
+---
+ 
 ### 2.2. Diseño de Racks y Organización <a name="22-diseno-de-racks-y-organizacion"></a>
-
-Para una gestión eficiente, la infraestructura se divide en dos armarios Rack de 42U, separando las funciones de red de las de administración:
-
-### Rack 1: Networking y Seguridad (Infraestructura de Red)
-
-- Contiene los elementos que garantizan la comunicación interna y el enlace con AWS:
-- Patch Panels: Gestión del cableado estructurado que llega desde los puestos de trabajo.
-- Router de Borde y Firewall: Encargados de la seguridad perimetral y de mantener el túnel VPN con la nube.
-- Switch Core: Dispositivo de alta velocidad (Capa 3) para la distribución de VLANs.
-- SAI (Sistema de Alimentación Ininterrumpida): Ubicado en la parte inferior para proporcionar estabilidad eléctrica y autonomía en caso de fallo de suministro.
-
-### Rack 2: Gestión y Administración (Servicios Locales)
-
-- Orientado al soporte administrativo y la protección de datos local:
-- Servidor de Administración Local: Controlador de dominio secundario y gestión de políticas internas.
-- Almacenamiento NAS: Nodo dedicado a las copias de seguridad de la base de datos y logs de AWS, garantizando una redundancia fuera de la nube.
-- Consola KVM: Para la administración física de los servidores sin necesidad de periféricos individuales.
-- Servidor de Monitorización: Supervisión en tiempo real de la temperatura, consumo y estado de los servicios.
-
+ 
+La infraestructura local de InnovateTech se concentra en **dos armarios rack de 42U**, que separan funcionalmente los equipos de red de los de administración y servicios. Dado que el CPD local tiene un alcance deliberadamente limitado —su función es la monitorización, la administración de usuarios y el backup—, el dimensionamiento es compacto pero diseñado con los mismos criterios de resiliencia que un CPD convencional.
+ 
+**Rack 1 — Red y Seguridad (Alta Disponibilidad)**
+ 
+Alberga los elementos que garantizan la comunicación interna y el enlace con los servicios en la nube:
+ 
+- **Patch panels:** centralización y gestión del cableado estructurado proveniente de los puestos de trabajo de todas las plantas del edificio.
+- **Router de borde y Firewall (activo/pasivo):** responsables de la seguridad perimetral, el filtrado de tráfico y el mantenimiento del túnel VPN Site-to-Site con AWS. Configurados en alta disponibilidad activo-pasivo con sincronización de estado entre ambos nodos.
+- **Switch Core capa 3 (stacking):** distribución de alta velocidad con segmentación en VLANs para Administración, Servidores, Monitorización y Usuarios.
+**Rack 2 — Gestión y Administración (Servicios Locales)**
+ 
+Orientado al soporte administrativo y a la protección de datos local:
+ 
+- **Bastion Host / Jump Server:** punto de acceso seguro y auditado para la administración remota de los servicios tanto locales como en la nube.
+- **Servidor de administración local:** controlador de dominio secundario y gestión de políticas internas de la organización.
+- **NAS corporativo:** almacenamiento dedicado a las copias de seguridad de la base de datos y los logs procedentes de AWS, asegurando una copia de los datos críticos fuera de la nube y bajo control directo de InnovateTech.
+- **Consola KVM:** administración física de los servidores sin necesidad de periféricos individuales, permitiendo intervención directa incluso cuando los sistemas operativos no responden.
+- **Servidor de monitorización:** supervisión en tiempo real de la temperatura, el consumo energético y el estado de los servicios mediante herramientas como Zabbix o Prometheus, con alertas configuradas para notificar al equipo de sistemas ante cualquier anomalía.
+[⬆ Volver al índice](#-tabla-de-contenidos)
+ 
+---
+ 
+### 2.3. Infraestructura Eléctrica (SAI) <a name="23-infraestructura-electrica-sai"></a>
+ 
+La continuidad del suministro eléctrico es un requisito crítico para cualquier CPD. InnovateTech implementará un **SAI redundante (UPS online)** ubicado en el Rack 1, que proporcionará alimentación ininterrumpida a todos los elementos críticos de red. El diseño online de doble conversión garantiza que los equipos estén siempre alimentados desde la batería, eliminando cualquier microcorte procedente de la red eléctrica. La autonomía estará dimensionada para permitir un apagado ordenado de los sistemas en caso de corte de suministro prolongado, evitando pérdidas de datos y daños en el hardware.
+ 
+Adicionalmente, se contempla la instalación de un **grupo electrógeno** como respaldo de segundo nivel para escenarios de corte eléctrico prolongado, garantizando así la continuidad operativa de los servicios de administración y backup durante el tiempo necesario para restablecer el suministro principal.
+ 
+[⬆ Volver al índice](#-tabla-de-contenidos)
+ 
+---
+ 
+### 2.4. Seguridad Física y PRL <a name="24-seguridad-fisica-y-prl"></a>
+ 
+La seguridad física del CPD de InnovateTech se articula en múltiples capas complementarias que cubren tanto la prevención de accesos no autorizados como la protección frente a riesgos medioambientales y laborales.
+ 
+En materia de **control de acceso**, se implementará un sistema de cerradura electrónica con identificación RFID y registro automatizado de todas las entradas y salidas del personal autorizado. El sistema de videovigilancia CCTV cubrirá de forma continua la zona de infraestructura, con retención de grabaciones conforme a la normativa vigente de protección de datos.
+ 
+Para la **detección y extinción de incendios**, la sala dispondrá de sensores ópticos de humo y sensores combinados de temperatura y humedad conectados a una central de alarmas. El sistema de extinción automática empleará gas inerte (Novec o CO₂), tecnología que sofoca el incendio por desplazamiento del oxígeno sin generar residuos conductores ni dañar los componentes electrónicos, a diferencia de los sistemas de agua o polvo.
+ 
+Desde el punto de vista de la **Prevención de Riesgos Laborales (PRL)**, la sala contará con señalización de emergencia, iluminación de seguridad autónoma y un protocolo de evacuación específico para el personal técnico. El acceso estará restringido al mínimo número de personas necesario para las tareas de mantenimiento, y cualquier intervención en los equipos bajo tensión seguirá los procedimientos establecidos por el Reglamento Electrotécnico de Baja Tensión (REBT) y la normativa de seguridad eléctrica aplicable.
+ 
+[⬆ Volver al índice](#-tabla-de-contenidos)
 ### 2.3. Infraestructura Eléctrica (SAI) <a name="23-infraestructura-electrica-sai"></a>
 *(Contenido aquí...)*
 
