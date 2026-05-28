@@ -1099,7 +1099,7 @@ L'aplicació té tres seccions:
 
 El diagrama Entitat-Relació representa les 14 entitats de la base de dades d'InnovateTech, els seus atributs principals i les relacions entre elles amb la cardinalitat corresponent.
 
-> <img width="1832" height="1304" alt="image" src="https://github.com/user-attachments/assets/c8f4e5f1-8b2d-4add-8716-a14f1eee41e4" />
+<img width="1832" height="1304" alt="image" src="https://github.com/user-attachments/assets/c8f4e5f1-8b2d-4add-8716-a14f1eee41e4" />
  Diagrama E/R exportat de dbdiagram.io mostrant totes les entitats i relacions.
 
 ### 6.2. Diseño Lógico (Relacional)
@@ -1129,7 +1129,7 @@ TAULA_AVISOS (id PK, usuari_db, taula_afectada, operacio, data_hora, detalls)
 CONTROL_BACKUP (id PK, data_hora, taules_incloses, resultat)
 ```
 
-> <img width="469" height="555" alt="image" src="https://github.com/user-attachments/assets/cd730bee-f70f-4222-962c-ae1915fba028" />
+<img width="469" height="555" alt="image" src="https://github.com/user-attachments/assets/cd730bee-f70f-4222-962c-ae1915fba028" />
  Resultat de `SHOW TABLES` a MariaDB mostrant les 14 taules creades.
 
 ### 6.3. Instalación y Securización de MariaDB
@@ -1165,7 +1165,7 @@ FLUSH PRIVILEGES;
 | Usuari | `admin` |
 
 <img width="1092" height="561" alt="image" src="https://github.com/user-attachments/assets/90834699-6ac8-4367-8e65-d61e0209eb49" />
-> `systemctl status mariadb` mostrant el servei actiu.
+`systemctl status mariadb` mostrant el servei actiu.
 
 ### 6.4. Script de Creación de Usuarios
 
@@ -1260,9 +1260,10 @@ done
 echo "Fitxer SQL generat: $OUTPUT_FILE"
 ```
 
-> <img width="736" height="536" alt="image" src="https://github.com/user-attachments/assets/9061216f-bb98-4c89-82e2-6296b28ceae2" />
+<img width="736" height="536" alt="image" src="https://github.com/user-attachments/assets/9061216f-bb98-4c89-82e2-6296b28ceae2" />
  Execució de `create_users.sh` creant un usuari amb rol `admin`.
-> <img width="733" height="358" alt="image" src="https://github.com/user-attachments/assets/3384f1fb-8fb3-4276-96e3-08edea3fdaee" />
+
+<img width="733" height="358" alt="image" src="https://github.com/user-attachments/assets/3384f1fb-8fb3-4276-96e3-08edea3fdaee" />
  Contingut de `usuaris_creats.sql` mostrant les sentències `CREATE USER` i `GRANT`.
 
 ### 6.5. Roles y Permisos
@@ -1308,7 +1309,8 @@ SHOW EVENTS FROM innovatetech;
 SHOW VARIABLES LIKE 'event_scheduler';
 ```
 
-> 📸 **CAPTURA:** `SHOW EVENTS FROM innovatetech` mostrant `evt_backup_diari` amb estat `ENABLED`.
+<img width="2359" height="189" alt="image" src="https://github.com/user-attachments/assets/cc73131d-f5b1-47eb-8f2c-214094e254a0" />
+ `SHOW EVENTS FROM innovatetech` mostrant `evt_backup_diari` amb estat `ENABLED`.
 > 📸 **CAPTURA:** `SELECT * FROM Taula_Avisos` mostrant registres reals de triggers disparats.
 
 **Automatització de mesures d'amplada de banda:**
