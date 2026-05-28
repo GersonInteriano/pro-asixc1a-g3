@@ -1165,7 +1165,7 @@ FLUSH PRIVILEGES;
 | Usuari | `admin` |
 
 <img width="1092" height="561" alt="image" src="https://github.com/user-attachments/assets/90834699-6ac8-4367-8e65-d61e0209eb49" />
-`systemctl status mariadb` mostrant el servei actiu.
+< `systemctl status mariadb` mostrant el servei actiu.
 
 ### 6.4. Script de Creación de Usuarios
 
@@ -1261,10 +1261,10 @@ echo "Fitxer SQL generat: $OUTPUT_FILE"
 ```
 
 <img width="736" height="536" alt="image" src="https://github.com/user-attachments/assets/9061216f-bb98-4c89-82e2-6296b28ceae2" />
- Execució de `create_users.sh` creant un usuari amb rol `admin`.
+< Execució de `create_users.sh` creant un usuari amb rol `admin`.
 
 <img width="733" height="358" alt="image" src="https://github.com/user-attachments/assets/3384f1fb-8fb3-4276-96e3-08edea3fdaee" />
- Contingut de `usuaris_creats.sql` mostrant les sentències `CREATE USER` i `GRANT`.
+< Contingut de `usuaris_creats.sql` mostrant les sentències `CREATE USER` i `GRANT`.
 
 ### 6.5. Roles y Permisos
 
