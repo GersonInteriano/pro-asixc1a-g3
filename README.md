@@ -1021,7 +1021,7 @@ TAULA_AVISOS (id PK, usuari_db, taula_afectada, operacio, data_hora, detalls)
 CONTROL_BACKUP (id PK, data_hora, taules_incloses, resultat)
 ```
 
-> <img width="1115" height="628" alt="image" src="https://github.com/user-attachments/assets/acb28f26-a443-4eae-90c3-12b3b950ac8c" />
+> <img width="469" height="555" alt="image" src="https://github.com/user-attachments/assets/cd730bee-f70f-4222-962c-ae1915fba028" />
  Resultat de `SHOW TABLES` a MariaDB mostrant les 14 taules creades.
 
 ### 6.3. Instalación y Securización de MariaDB
