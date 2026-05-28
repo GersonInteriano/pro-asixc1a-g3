@@ -589,7 +589,7 @@ Solució:
 ```powershell
 icacls "innovatetech-key.pem" /inheritance:r
 icacls "innovatetech-key.pem" /grant:r "gamer:R"
-icacls "innovatetech-key.pem" /remove "Pc-Ay-Ou\ayman"
+icacls "innovatetech-key.pem" /remove "Pc-\userrr"
 ```
 P2 — IPs públiques canvien cada sessió
 Problema: Les IPs públiques de les EC2 canvien a cada reinici del lab.
