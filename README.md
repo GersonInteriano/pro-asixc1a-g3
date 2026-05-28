@@ -491,7 +491,7 @@ Una **VPC (Virtual Private Cloud)** és la xarxa privada virtual dins d'AWS que 
 | innovatetech-ldap | 8 GiB | OpenLDAP |
 | innovatetech-logs | 8 GiB | Rsyslog + Ansible |
 | innovatetech-db | 8 GiB | MariaDB |
-| innovatetech-media | 20 GiB | Àudio/Vídeo/Jitsi |
+
 
 La comunicació interna entre màquines es fa sempre per **IP privada**, que és permanent. Les IPs elàstiques s'utilitzen per a l'accés extern.
 
