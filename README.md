@@ -711,17 +711,7 @@ ssh -i ~/Baixades/innovatetech-key.pem admintech@3.208.185.55 \
 *(Contenido aquí...)*
 [⬆ Volver al índice](#-tabla-de-contenidos)
 
-## 5. Servicios de Red y Gestión de Identidad <a name="5-servicios-de-red-y-gestion-de-identidad"></a>
 
-### 5.1. Directorio Activo (AD/LDAP) <a name="51-directorio-activo-adldap"></a>
-*(Contenido aquí...)*
-
-### 5.2. SFTP Seguro e Integración <a name="52-sftp-seguro-e-integracion"></a>
-*(Contenido aquí...)*
-
-### 5.3. Centralización de Logs <a name="53-centralizacion-de-logs"></a>
-*(Contenido aquí...)*
-[⬆ Volver al índice](#-tabla-de-contenidos)
 
 ## 6. Diseño e Implementación de la Base de Datos <a name="6-diseno-e-implementacion-de-la-base-de-datos"></a>
 
