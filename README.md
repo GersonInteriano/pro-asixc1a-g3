@@ -1313,7 +1313,8 @@ SHOW VARIABLES LIKE 'event_scheduler';
 
 <img width="2359" height="189" alt="image" src="https://github.com/user-attachments/assets/cc73131d-f5b1-47eb-8f2c-214094e254a0" />
  `SHOW EVENTS FROM innovatetech` mostrant `evt_backup_diari` amb estat `ENABLED`.
-> 📸 **CAPTURA:** `SELECT * FROM Taula_Avisos` mostrant registres reals de triggers disparats.
+> <img width="2560" height="1392" alt="image" src="https://github.com/user-attachments/assets/b4f027e0-becf-4c89-91b6-ac4839a490d4" />
+ `SELECT * FROM Taula_Avisos` mostrant registres reals de triggers disparats.
 
 **Automatització de mesures d'amplada de banda:**
 
