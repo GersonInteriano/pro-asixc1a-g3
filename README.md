@@ -697,18 +697,912 @@ ssh -i ~/Baixades/innovatetech-key.pem admintech@3.208.185.55 \
 
 ---
 
-## 4. Implantación de Servicios Multimedia <a name="4-implantacion-de-servicios-multimedia"></a>
-
 ### 4.1. Servicio de Streaming de Audio <a name="41-servicio-de-streaming-de-audio"></a>
-*(Contenido aquí...)*
 
-### 4.2. Servicio de Streaming de Vídeo <a name="42-servicio-de-streaming-de-video"></a>
-*(Contenido aquí...)*
+> Servidor: AWS EC2 — Ubuntu Server 22.04 LTS
 
-### 4.3. Videoconferencia (Jitsi Meet) <a name="43-videoconferencia-jitsi-meet"></a>
-*(Contenido aquí...)*
+El servidor de audio ofrece dos modalidades: **audio bajo demanda** (archivos MP3 servidos por Nginx) y **streaming en directo** (Icecast2 en formato OGG/Vorbis).
+
+---
+
+### Infraestructura AWS
+
+Se ha desplegado una instancia EC2 `t2.micro` con Ubuntu 22.04 LTS. El entorno AWS Academy impone restricciones de red que han condicionado algunas decisiones de configuración: cambio de puerto 80 → 8080, IPs públicas dinámicas y Security Groups que se resetean al reiniciar el lab.
+
+**Security Group `servicios-multimedia` — puertos abiertos:**
+
+| Puerto | Protocolo | Servicio  |
+|--------|-----------|-----------|
+| 22     | TCP       | SSH       |
+| 80     | TCP       | HTTP      |
+| 443    | TCP       | HTTPS     |
+| 1935   | TCP       | RTMP      |
+| 8000   | TCP       | Icecast2  |
+| 8080   | TCP       | Nginx     |
+
+> 📷 **CAPTURA 1:** Consola AWS → EC2 → Security Groups → `servicios-multimedia` → pestaña "Inbound rules". Debe verse la tabla completa con los 6 puertos y origen `0.0.0.0/0`.
+
+---
+
+### Servidor web — Nginx
+
+Nginx actúa como servidor web en el puerto 8080 y sirve los contenidos multimedia. Se instala también el módulo RTMP para soporte de streaming futuro.
+
+**Instalación:**
+
+```bash
+sudo apt update
+sudo apt install -y nginx libnginx-mod-rtmp
+```
+
+**Verificación del servicio:**
+
+```bash
+nginx -v
+sudo systemctl status nginx
+sudo ss -tlnp | grep 8080
+```
+
+> 📷 **CAPTURA 2:** Terminal mostrando `sudo systemctl status nginx` con estado `active (running)` en verde y la línea `nginx -v` con la versión instalada.
+
+**Prueba de respuesta HTTP:**
+
+```bash
+curl -I http://localhost:8080
+```
+
+> 📷 **CAPTURA 3:** Terminal con la salida de `curl -I http://localhost:8080` mostrando `HTTP/1.1 200 OK`.
+
+**Configuración `/etc/nginx/nginx.conf`** con bloques `location /videos` y `location /audio` con los `Content-Type` adecuados y cabeceras CORS:
+
+```bash
+cat /etc/nginx/nginx.conf
+```
+
+> 📷 **CAPTURA 4:** Terminal mostrando el contenido de `nginx.conf` con los bloques `location /audio` y `location /videos` visibles.
+
+---
+
+### Audio bajo demanda — Nginx
+
+Los archivos MP3 se almacenan en el servidor y se sirven por HTTP desde `/var/www/html/audio/`.
+
+**Creación de la carpeta y descarga de audios:**
+
+```bash
+sudo mkdir -p /var/www/html/audio
+
+sudo wget -O /var/www/html/audio/audio1.mp3 "https://download.samplelib.com/mp3/sample-3s.mp3"
+sudo wget -O /var/www/html/audio/audio2.mp3 "https://download.samplelib.com/mp3/sample-6s.mp3"
+sudo wget -O /var/www/html/audio/audio3.mp3 "https://download.samplelib.com/mp3/sample-9s.mp3"
+
+# Generar audio sintético con ffmpeg (tono 440Hz, 30s)
+sudo ffmpeg -f lavfi -i sine=frequency=440:duration=30 \
+  -c:a libmp3lame -b:a 128k /var/www/html/audio/audio4.mp3
+
+sudo chown -R www-data:www-data /var/www/html/audio
+```
+
+**Verificación de los archivos:**
+
+```bash
+ls -lh /var/www/html/audio/
+```
+
+> 📷 **CAPTURA 5:** Terminal con `ls -lh /var/www/html/audio/` mostrando los 4 archivos MP3 con propietario `www-data` y sus tamaños.
+
+**Prueba de acceso HTTP:**
+
+```bash
+curl -I http://localhost:8080/audio/audio1.mp3
+```
+
+> 📷 **CAPTURA 6:** Terminal con la respuesta `200 OK` y cabecera `Content-Type: audio/mpeg`.
+
+---
+
+### Streaming en directo — Icecast2
+
+Icecast2 es el servidor de streaming de audio en directo. Emite en formato OGG/Vorbis en el puerto 8000. El cliente emisor es `ffmpeg`, que genera un tono de prueba de 440Hz y lo envía al mount `/stream.ogg`.
+
+**Instalación:**
+
+```bash
+sudo apt install -y icecast2
+```
+
+**Configuración en `/etc/icecast2/icecast.xml`:**
+
+| Parámetro        | Valor          |
+|------------------|----------------|
+| `source-password`| `12345`        |
+| Puerto           | `8000`         |
+| Mount point      | `/stream.ogg`  |
+
+**Verificación del servicio:**
+
+```bash
+sudo systemctl status icecast2
+sudo ss -tlnp | grep 8000
+```
+
+> 📷 **CAPTURA 7:** Terminal mostrando `sudo systemctl status icecast2` con estado `active (running)` y el puerto 8000 escuchando.
+
+**Verificación del stream activo** (Icecast no soporta HEAD para streams):
+
+```bash
+curl -v http://localhost:8000/stream.ogg --output /dev/null 2>&1 | head -20
+```
+
+> 📷 **CAPTURA 8:** Terminal con la respuesta `200 OK` y `Content-Type: application/ogg` — stream funcional.
+
+**Estado del servidor desde el navegador** (`http://IP:8000/status.xsl`):
+
+> 📷 **CAPTURA 9:** Navegador mostrando la página de estado de Icecast2 en `http://IP:8000/status.xsl` con el Mount Point `/stream.ogg` activo y el contador de Listeners.
+
+---
+
+### Interfaz web
+
+La interfaz web es accesible en `http://IP:8080`. La pestaña **Audio** incluye un banner de radio en directo (Icecast2), la lista de pistas MP3 bajo demanda y el botón "Escoltar Radio" que abre Icecast en una nueva pestaña.
+
+> 📷 **CAPTURA 10:** Navegador mostrando la pestaña Audio de la interfaz web en `http://IP:8080` con el banner de radio, el botón "Escoltar Radio" y la lista de pistas MP3.
+
+> 📷 **CAPTURA 11:** Navegador reproduciendo una pista MP3 — el reproductor de audio en funcionamiento.
+
+---
+
+### Protocolos utilizados
+
+| Protocolo | Uso |
+|-----------|-----|
+| **HTTP** | Nginx sirve los archivos MP3 en el puerto 8080 (bajo demanda) |
+| **Icecast / HTTP Streaming** | Icecast2 sirve el stream en el puerto 8000 vía HTTP |
+| **RTMP** | Puerto 1935, módulo Nginx instalado (preparado para streaming en directo futuro) |
+| **OGG/Vorbis** | Formato y códec del stream en directo de Icecast2 |
+| **MP3** | Formato de los archivos de audio bajo demanda |
+| **TCP** | Transporte de todas las conexiones HTTP y streaming |
+
 [⬆ Volver al índice](#-tabla-de-contenidos)
 
+
+### 4.2. Servicio de Streaming de Vídeo <a name="42-servicio-de-streaming-de-video"></a>
+> Servidor: AWS EC2 — Ubuntu Server 22.04 LTS
+
+El servicio de vídeo funciona en modo **VOD (Video on Demand)**. Los archivos MP4 con códec H.264 se almacenan en el servidor y se reproducen bajo demanda desde el navegador con **VideoJS**.
+
+> ℹ️ El profesor confirmó que la práctica requiere vídeo pregrabado servido por HTTP, no streaming en directo.
+
+---
+
+### Creación de la carpeta y permisos
+
+```bash
+sudo mkdir -p /var/www/html/videos
+sudo chown -R www-data:www-data /var/www/html/videos
+sudo chmod -R 755 /var/www/html/videos
+```
+
+---
+
+### Descarga de los vídeos de prueba
+
+El entorno AWS Academy restringe muchos dominios externos. Se descargan vídeos de muestra desde `samplelib.com` y se genera un cuarto vídeo sintético con `ffmpeg` (barras de color + tono de 440Hz):
+
+```bash
+sudo wget -O /var/www/html/videos/video1.mp4 "https://download.samplelib.com/mp4/sample-5s.mp4"
+sudo wget -O /var/www/html/videos/video2.mp4 "https://download.samplelib.com/mp4/sample-10s.mp4"
+sudo wget -O /var/www/html/videos/video3.mp4 "https://download.samplelib.com/mp4/sample-15s.mp4"
+
+# Generar vídeo sintético con ffmpeg (barras de color + tono 440Hz, 30s)
+sudo apt install -y ffmpeg
+sudo ffmpeg -f lavfi -i testsrc=duration=30:size=1280x720:rate=30 \
+  -f lavfi -i sine=frequency=440:duration=30 -c:v libx264 -c:a aac \
+  /var/www/html/videos/video4.mp4
+
+sudo chown -R www-data:www-data /var/www/html/videos
+```
+
+**Verificación de los archivos:**
+
+```bash
+ls -lh /var/www/html/videos/
+```
+
+> 📷 **CAPTURA 1:** Terminal con `ls -lh /var/www/html/videos/` mostrando los 4 archivos MP4 con propietario `www-data` y sus tamaños.
+
+---
+
+### Prueba de acceso HTTP al vídeo
+
+```bash
+curl -I http://localhost:8080/videos/video1.mp4
+```
+
+> 📷 **CAPTURA 2:** Terminal con la respuesta `200 OK` y cabecera `Content-Type: video/mp4` — Nginx sirve el vídeo correctamente.
+
+---
+
+### Reproductor web — VideoJS
+
+La interfaz web es accesible en `http://IP:8080`. Tiene dos pestañas (**Vídeo** y **Audio**), reproductor central y lista lateral de contenidos.
+
+> 📷 **CAPTURA 3:** Navegador mostrando la pestaña Vídeo de la interfaz web en `http://IP:8080` con el reproductor VideoJS y la lista de clips en la barra lateral.
+
+> 📷 **CAPTURA 4:** Navegador con un vídeo reproduciéndose correctamente dentro del reproductor VideoJS.
+
+---
+
+### Estructura de ficheros y permisos
+
+Todo el contenido servido por Nginx pertenece a `www-data`:
+
+```bash
+ls -lhR /var/www/html/
+```
+
+> 📷 **CAPTURA 5:** Terminal con `ls -lhR /var/www/html/` mostrando la estructura completa de carpetas `/videos` y `/audio` con propietario `www-data` en todos los archivos.
+
+---
+
+### Todos los puertos en escucha
+
+```bash
+sudo ss -tlnp
+```
+
+> 📷 **CAPTURA 6:** Terminal con `sudo ss -tlnp` mostrando los puertos activos: 22 (SSH), 8000 (Icecast2) y 8080 (Nginx).
+
+---
+
+### Firewall y seguridad de red
+
+El firewall interno de Ubuntu (UFW) está desactivado. La seguridad se gestiona vía AWS Security Groups a nivel de VPC.
+
+```bash
+sudo ufw status
+```
+
+> 📷 **CAPTURA 7:** Terminal con `sudo ufw status` mostrando `Status: inactive`.
+
+---
+
+### Protocolos utilizados
+
+| Protocolo | Uso |
+|-----------|-----|
+| **HTTP**  | Nginx sirve los archivos MP4 en el puerto 8080 (VOD bajo demanda) |
+| **HLS**   | Módulo RTMP de Nginx configurado para generar fragmentos HLS (preparado; finalmente se optó por VOD estático) |
+| **H.264** | Códec de vídeo de los archivos MP4 |
+| **TCP**   | Transporte de todas las conexiones HTTP |
+
+---
+
+### Conclusiones
+
+- ✅ **Nginx** operativo en el puerto 8080 — vídeo MP4 (H.264) y audio MP3 bajo demanda vía HTTP
+- ✅ **Icecast2** operativo en el puerto 8000 — streaming en directo OGG/Vorbis funcional en el navegador
+- ✅ **Interfaz web unificada** en `http://34.225.147.8:8080` con pestañas Vídeo y Audio
+- ✅ **Formatos:** MP4/H.264 para vídeo, MP3 y OGG/Vorbis para audio
+- ✅ **Seguridad** vía AWS Security Groups — puertos 22, 8000 y 8080 abiertos desde `0.0.0.0/0`
+
+[⬆ Volver al índice](#-tabla-de-contenidos)
+
+
+### 4.3. Videoconferencia (Jitsi Meet) <a name="43-videoconferencia-jitsi-meet"></a>
+> Instalación nativa sobre Ubuntu 22.04 — EC2 sin Docker
+
+Jitsi Meet es una plataforma de videoconferencia de código abierto que permite crear salas de reuniones virtuales sin necesidad de cuentas de usuario. Se instala de forma nativa (sin Docker) sobre una instancia EC2 de AWS Academy con Ubuntu 22.04, usando una IP elástica pública para garantizar la accesibilidad desde el exterior.
+
+| Parámetro | Valor |
+|-----------|-------|
+| **IP elástica (pública)** | `54.227.77.10` |
+| **IP privada (VPC)** | `172.31.36.193` |
+| **Sistema operativo** | Ubuntu 22.04 LTS |
+| **Hostname configurado** | `jitsi-meet` |
+| **Acceso a la instancia** | EC2 Instance Connect (sin `.pem`) |
+| **Método de instalación** | Nativo — sin Docker ni Ngrok |
+
+> ⚠️ **Lección aprendida:** la versión JVB 2.3-291 **NO** lee la configuración XMPP del fichero `jvb.conf` (HOCON). La lee exclusivamente de `sip-communicator.properties` mediante el `ConfigurationService`, con claves en **MAYÚSCULAS**.
+
+---
+
+### Paso 1 — Preparar el sistema
+
+#### 1.1 Actualizar paquetes e instalar dependencias
+
+```bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y apt-transport-https curl gnupg2 wget nginx software-properties-common
+```
+
+> 📷 **CAPTURA 1:** Terminal con la salida de `apt upgrade` finalizado sin errores.
+
+#### 1.2 Configurar el hostname
+
+> ⚠️ Es imprescindible configurar el hostname **antes** de instalar cualquier componente de Jitsi. Los paquetes lo usan para generar los certificados TLS y configurar los dominios XMPP. Si se configura después, hay que regenerar todos los certificados.
+
+```bash
+sudo hostnamectl set-hostname jitsi-meet
+echo "127.0.0.1 jitsi-meet" | sudo tee -a /etc/hosts
+echo "54.227.77.10 jitsi-meet" | sudo tee -a /etc/hosts
+hostname   # verificación — debe mostrar: jitsi-meet
+```
+
+> 📷 **CAPTURA 2:** Terminal mostrando el resultado de `hostname` con el valor `jitsi-meet` y el contenido de `/etc/hosts` con las dos entradas añadidas.
+
+#### 1.3 Instalar Java 11
+
+Jicofo y Jitsi Videobridge (JVB) son aplicaciones Java. Se requiere la versión 11 como mínimo.
+
+```bash
+sudo apt install -y openjdk-11-jdk
+java -version
+```
+
+> 📷 **CAPTURA 3:** Terminal con `java -version` mostrando `OpenJDK 11`.
+
+---
+
+### Paso 2 — Añadir el repositorio oficial de Jitsi
+
+Jitsi Meet no está en los repositorios oficiales de Ubuntu. Hay que añadir el repositorio propio de Jitsi con su clave GPG.
+
+```bash
+curl https://download.jitsi.org/jitsi-key.gpg.key | sudo gpg --dearmor -o /usr/share/keyrings/jitsi-key.gpg
+
+echo "deb [signed-by=/usr/share/keyrings/jitsi-key.gpg] https://download.jitsi.org stable/" | \
+  sudo tee /etc/apt/sources.list.d/jitsi-stable.list
+
+sudo apt update
+```
+
+> 📷 **CAPTURA 4:** Terminal con la clave GPG de Jitsi añadida correctamente y `apt update` ejecutado sin errores.
+
+---
+
+### Paso 3 — Instalar Jitsi Meet
+
+Se instalan los tres componentes principales en un solo comando:
+
+| Componente | Descripción |
+|------------|-------------|
+| `jicofo` | Coordinador de conferencias (Jitsi Conference Focus) |
+| `jitsi-videobridge2` | Servidor de media que gestiona los flujos RTP |
+| `jitsi-meet` | Frontend web (HTML/JS) servido por Nginx |
+
+```bash
+sudo apt install -y jicofo jitsi-videobridge2 jitsi-meet
+```
+
+Durante la instalación aparecen dos diálogos interactivos:
+1. **Hostname:** escribir `jitsi-meet`
+2. **Certificado SSL:** seleccionar `Generate a new self-signed certificate`
+
+> 📷 **CAPTURA 5:** Terminal mostrando la instalación completada de los tres componentes sin errores.
+
+---
+
+### Paso 4 — Configurar Prosody (servidor XMPP)
+
+Prosody es el servidor XMPP que gestiona toda la señalización entre los clientes web y los componentes de Jitsi.
+
+#### 4.1 Generar certificados TLS
+
+```bash
+sudo prosodyctl cert generate jitsi-meet
+sudo prosodyctl cert generate auth.jitsi-meet
+sudo ls /etc/prosody/certs/
+```
+
+Deben existir los cuatro ficheros: `jitsi-meet.key`, `jitsi-meet.crt`, `auth.jitsi-meet.key`, `auth.jitsi-meet.crt`.
+
+> 📷 **CAPTURA 6:** Terminal con `ls /etc/prosody/certs/` mostrando los 4 ficheros de certificados generados.
+
+#### 4.2 Crear usuarios XMPP
+
+JVB y Jicofo se autentican contra Prosody como usuarios internos:
+
+```bash
+JVB_PASS=$(openssl rand -hex 16)
+FOCUS_PASS=$(openssl rand -hex 16)
+echo "JVB_PASS=$JVB_PASS"
+echo "FOCUS_PASS=$FOCUS_PASS"
+
+sudo prosodyctl register jvb auth.jitsi-meet $JVB_PASS
+sudo prosodyctl register focus auth.jitsi-meet $FOCUS_PASS
+```
+
+> ⚠️ **Guardar los valores de `JVB_PASS` y `FOCUS_PASS` inmediatamente.** Se necesitan en los pasos 5 y 6.
+
+#### 4.3 Reiniciar Prosody
+
+```bash
+sudo systemctl restart prosody
+sudo systemctl status prosody
+```
+
+> 📷 **CAPTURA 7:** Terminal con `sudo systemctl status prosody` mostrando estado `active (running)`.
+
+---
+
+### Paso 5 — Configurar el mapeado NAT para AWS (JVB)
+
+> ⚠️ **Parte más crítica de la instalación.** JVB se ejecuta en la IP privada de la VPC (`172.31.36.193`) pero los clientes externos deben conectarse a la IP elástica pública (`54.227.77.10`). Sin el mapeado correcto, ICE no puede negociar los candidatos de media y las videoconferencias no se establecen.
+
+#### 5.1 `sip-communicator.properties` — conexión XMPP del JVB
+
+> ⚠️ La versión JVB 2.3-291 lee la configuración XMPP **ÚNICAMENTE** de este fichero, no de `jvb.conf`. Las claves deben estar en **MAYÚSCULAS** exactas.
+
+```bash
+sudo nano /etc/jitsi/videobridge/sip-communicator.properties
+```
+
+```properties
+org.jitsi.videobridge.xmpp.user.shard.HOSTNAME=localhost
+org.jitsi.videobridge.xmpp.user.shard.DOMAIN=auth.jitsi-meet
+org.jitsi.videobridge.xmpp.user.shard.USERNAME=jvb
+org.jitsi.videobridge.xmpp.user.shard.PASSWORD=<JVB_PASS del paso 4.2>
+org.jitsi.videobridge.xmpp.user.shard.MUC_JIDS=JvbBrewery@internal.auth.jitsi-meet
+org.jitsi.videobridge.xmpp.user.shard.MUC_NICKNAME=<cat /proc/sys/kernel/random/uuid>
+org.jitsi.videobridge.xmpp.user.shard.DISABLE_CERTIFICATE_VERIFICATION=true
+org.ice4j.ice.harvest.DISABLE_AWS_HARVESTER=false
+org.ice4j.ice.harvest.STUN_MAPPING_HARVESTER_ADDRESSES=meet-jit-si-turnrelay.jitsi.net:443
+```
+
+> 📷 **CAPTURA 8:** Terminal con `cat /etc/jitsi/videobridge/sip-communicator.properties` mostrando el contenido completo con las credenciales del JVB.
+
+#### 5.2 `jvb.conf` — WebSockets y mapeado de IPs
+
+```bash
+sudo nano /etc/jitsi/videobridge/jvb.conf
+```
+
+```hocon
+videobridge {
+    http-servers { public { port = 9090 } }
+    websockets {
+        enabled = true
+        domain = "jitsi-meet:443"
+        tls = true
+    }
+}
+
+ice4j {
+    harvest {
+        mapping {
+            aws { enabled = true }
+            stun { addresses = ["meet-jit-si-turnrelay.jitsi.net:443"] }
+            static-mappings = [{
+                local-address = "172.31.36.193"
+                public-address = "54.227.77.10"
+            }]
+        }
+    }
+}
+```
+
+> 📷 **CAPTURA 9:** Terminal con `cat /etc/jitsi/videobridge/jvb.conf` mostrando el contenido completo con el mapeado IP privada → pública.
+
+---
+
+### Paso 6 — Configurar Jicofo
+
+```bash
+sudo nano /etc/jitsi/jicofo/jicofo.conf
+```
+
+```hocon
+jicofo {
+    xmpp {
+        client {
+            server = "localhost"
+            domain = "auth.jitsi-meet"
+            username = "focus"
+            password = "<FOCUS_PASS del paso 4.2>"
+            resource = "focus"
+            disable-certificate-verification = true
+        }
+        trusted-domains = [ "recorder.jitsi-meet" ]
+    }
+    bridge {
+        brewery-jid = "JvbBrewery@internal.auth.jitsi-meet"
+        selection-strategy = SingleBridgeSelectionStrategy
+    }
+    conference { enable-auto-owner = true }
+}
+```
+
+**Security Group de AWS — puertos necesarios para Jitsi:**
+
+| Puerto | Protocolo | Uso |
+|--------|-----------|-----|
+| 80     | TCP       | Redirección HTTP → HTTPS |
+| 443    | TCP       | Frontend web y BOSH |
+| 4443   | TCP       | JVB fallback TCP |
+| 10000  | UDP       | **Media RTP/RTCP (JVB)** ← el más importante |
+
+> ⚠️ **El puerto 10000 UDP es crítico:** es el que usa JVB para enviar y recibir los flujos de media. Sin este puerto abierto las videoconferencias no tendrán audio ni vídeo.
+
+> 📷 **CAPTURA 10:** Consola AWS → EC2 → Security Groups → pestaña "Inbound rules" mostrando los puertos 80, 443, 4443 TCP y 10000 UDP abiertos.
+
+---
+
+### Paso 7 — Configurar la IP pública en el frontend
+
+Se usa BOSH (HTTP long-polling sobre HTTPS) en lugar de WebSocket porque el certificado es autofirmado y los navegadores modernos bloquean las conexiones WSS a certificados no válidos.
+
+#### 7.1 `jitsi-meet-config.js`
+
+```bash
+sudo nano /etc/jitsi/meet/jitsi-meet-config.js
+```
+
+Modificaciones:
+```javascript
+bosh: 'https://54.227.77.10/http-bind',
+//websocket: 'wss://jitsi-meet/' + subdir + 'xmpp-websocket',  // comentado
+```
+
+#### 7.2 Fix crítico en Nginx: header Host
+
+**Problema:** el bloque `/http-bind` de Nginx usa `$http_host`, pero cuando el navegador accede por IP el header que envía es la IP pública, no el hostname interno. Prosody rechaza la conexión.
+
+```bash
+sudo nano /etc/nginx/sites-available/jitsi-meet.conf
+```
+
+```nginx
+# Dentro del bloque 'location = /http-bind', cambiar:
+proxy_set_header Host $http_host;   # ← incorrecto
+
+# Por:
+proxy_set_header Host jitsi-meet;   # ← correcto
+```
+
+#### 7.3 Desactivar el Service Worker
+
+```bash
+sudo bash -c 'echo "" > /usr/share/jitsi-meet/pwa-worker.js'
+```
+
+#### 7.4 Verificar y recargar Nginx
+
+```bash
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+> 📷 **CAPTURA 11:** Terminal con `sudo nginx -t` mostrando `syntax is ok` y `test is successful`.
+
+---
+
+### Paso 8 — Arrancar los servicios
+
+> ⚠️ El orden de arranque es importante: **Prosody debe estar operativo** antes de que JVB y Jicofo intenten conectarse.
+
+```bash
+sudo systemctl restart prosody
+sleep 3
+sudo systemctl restart jitsi-videobridge2
+sleep 5
+sudo systemctl restart jicofo
+
+# Verificación de los tres servicios
+sudo systemctl status prosody jitsi-videobridge2 jicofo --no-pager | grep -E "Active|●"
+```
+
+> 📷 **CAPTURA 12:** Terminal con el resultado del comando de verificación mostrando los tres servicios con estado `active (running)`.
+
+**Verificar los logs de JVB:**
+
+```bash
+sudo tail -30 /var/log/jitsi/jvb.log
+```
+
+**Verificar los logs de Jicofo:**
+
+```bash
+sudo tail -30 /var/log/jitsi/jicofo.log
+```
+
+Líneas que confirman el funcionamiento correcto:
+- `Joined the room` → Jicofo unido al MUC JvbBrewery
+- `Added new videobridge: Bridge[jid=jvbbrewery@...]` → JVB detectado y disponible
+
+> 📷 **CAPTURA 13:** Terminal con `sudo tail -30 /var/log/jitsi/jicofo.log` mostrando la línea `Added new videobridge` con la versión 2.3.291.
+
+---
+
+### Paso 9 — Prueba de funcionamiento
+
+Con todos los servicios activos, se accede a la interfaz web:
+
+```
+https://54.227.77.10
+```
+
+> ⚠️ El navegador mostrará un aviso de certificado autofirmado. Hay que aceptarlo: **Avanzado → Continuar de todas formas**.
+
+> 📷 **CAPTURA 14:** Navegador mostrando la página de inicio de Jitsi Meet en `https://54.227.77.10` con el campo para crear una sala.
+
+> 📷 **CAPTURA 15:** Navegador dentro de una sala de videoconferencia activa, con cámara y/o audio funcionando (puede ser con dos pestañas o dos dispositivos).
+
+---
+
+### Resumen de ficheros modificados
+
+| Fichero | Cambio aplicado |
+|---------|-----------------|
+| `/etc/jitsi/videobridge/sip-communicator.properties` | Configuración XMPP del JVB (claves MAYÚSCULAS) |
+| `/etc/jitsi/videobridge/jvb.conf` | WebSockets + mapeado IP privada/pública |
+| `/etc/jitsi/jicofo/jicofo.conf` | Credenciales XMPP + brewery-jid + disable-cert |
+| `/etc/jitsi/meet/jitsi-meet-config.js` | `bosh` con IP pública, websocket comentado |
+| `/usr/share/jitsi-meet/pwa-worker.js` | Vaciado — evita errores Service Worker |
+| `/etc/nginx/sites-available/jitsi-meet.conf` | `proxy_set_header Host jitsi-meet` (bloque `/http-bind`) |
+
+---
+
+### Protocolos utilizados
+
+**Señalización (control):**
+
+| Protocolo | Uso |
+|-----------|-----|
+| **XMPP** | Protocolo base de mensajería. Prosody coordina todos los componentes (JVB, Jicofo, clientes) |
+| **BOSH** | Tunneling de XMPP sobre HTTP/HTTPS. El navegador se conecta a Prosody a través de `/http-bind` |
+
+**Media (audio y vídeo):**
+
+| Protocolo | Uso |
+|-----------|-----|
+| **WebRTC** | Estándar del navegador para comunicación en tiempo real |
+| **ICE** | Negocia la ruta óptima entre peers |
+| **STUN** | Permite descubrir la IP pública del cliente (`meet-jit-si-turnrelay.jitsi.net:443`) |
+| **DTLS** | Cifrado del canal de media |
+| **SRTP** | Transmisión segura de audio/vídeo |
+| **RTP/RTCP** | Transporte real de los paquetes de media sobre UDP puerto 10000 |
+
+**Transporte web:**
+
+| Protocolo | Uso |
+|-----------|-----|
+| **HTTPS (TLS 1.2/1.3)** | Puerto 443 — todo el frontend y BOSH |
+| **HTTP** | Puerto 80 — redirección a HTTPS |
+| **Colibri** | Protocolo propio de Jitsi sobre WebSocket entre el navegador y JVB (puerto 9090 interno, expuesto por Nginx en `/colibri-ws/`) |
+
+[⬆ Volver al índice](#-tabla-de-contenidos)
+
+---
+
+## 7. Comprobaciones de Rendimiento y Seguridad
+
+> Pruebas de rendimiento de red — AWS EC2 · CFGS ASIX · ITB · Curs 25/26
+
+El objetivo de este apartado es verificar que la infraestructura desplegada en AWS es capaz de soportar simultáneamente los servicios de audio, vídeo y videoconferencia sin degradación del servicio.
+
+Las pruebas se han realizado entre las dos instancias EC2 desplegadas en la misma VPC (`us-east-1`), usando `iperf3` para medir el ancho de banda real de la red interna.
+
+### Infraestructura de pruebas
+
+| Instancia | Servicios | IP privada | IP pública |
+|-----------|-----------|------------|------------|
+| **Instancia 1** | Servidor Audio/Vídeo (Nginx + Icecast2) | `172.31.17.184` | `34.225.147.8` |
+| **Instancia 2** | Servidor Videoconferencia (Jitsi Meet) | `172.31.36.193` | `54.227.77.10` |
+
+> Las pruebas se ejecutan usando las **IPs privadas** para que el tráfico pase por la red interna de la VPC.
+
+### Herramienta — iperf3
+
+```bash
+sudo apt install -y iperf3
+iperf3 -s -D   # iniciar servidor en Instancia 1
+```
+
+---
+
+### Prueba 1 — Instancia 2 (Jitsi) → Instancia 1 (Audio/Vídeo)
+
+**Download:**
+
+```bash
+iperf3 -c 172.31.17.184 -p 5201 -t 10
+```
+
+> 📷 **CAPTURA 16:** Terminal con el resultado de `iperf3` mostrando **1.02 Gbits/s de download** sostenidos durante 10 segundos, con las retransmisiones (Retr: 24) y la Congestion Window estable.
+
+**Resultado: 1.02 Gbits/s de download — retransmisiones mínimas (Retr: 24), normales en conexiones de alta velocidad.**
+
+**Upload:**
+
+```bash
+iperf3 -c 172.31.17.184 -p 5201 -t 10 -R
+```
+
+> 📷 **CAPTURA 17:** Terminal con el resultado de `iperf3 -R` mostrando **1.02 Gbits/s de upload — 0 retransmisiones**.
+
+**Resultado: 1.02 Gbits/s de upload — 0 retransmisiones. La simetría entre download y upload confirma que la red interna AWS es completamente simétrica.**
+
+**Latencia:**
+
+```bash
+iperf3 -c 172.31.17.184 -p 5201 -t 1
+```
+
+> 📷 **CAPTURA 18:** Terminal con el resultado de la prueba de 1 segundo mostrando 121 MBytes transferidos.
+
+**Resultado: 121 MBytes en 1 segundo — latencia estimada <1ms.**
+
+> ℹ️ El ping ICMP da 100% packet loss porque AWS Academy bloquea ICMP por defecto en el Security Group. La latencia real se estima <1ms por estar en la misma zona de disponibilidad.
+
+---
+
+### Prueba 2 — Instancia 1 (Audio/Vídeo) → Instancia 2 (Jitsi)
+
+Segunda prueba en dirección inversa para verificar la simetría de la red.
+
+**Download:**
+
+```bash
+iperf3 -c 172.31.36.193 -p 5201 -t 10
+```
+
+> 📷 **CAPTURA 19:** Terminal con resultado **1.02 Gbits/s — 0 retransmisiones**. Conexión perfectamente estable.
+
+**Upload:**
+
+```bash
+iperf3 -c 172.31.36.193 -p 5201 -t 10 -R
+```
+
+> 📷 **CAPTURA 20:** Terminal con resultado **1.02 Gbits/s — conexión simétrica confirmada en ambas direcciones**.
+
+**Latencia:**
+
+```bash
+iperf3 -c 172.31.36.193 -p 5201 -t 1
+```
+
+> 📷 **CAPTURA 21:** Terminal con 121 MBytes en 1 segundo — **latencia <1ms confirmada en ambas direcciones**.
+
+---
+
+### Resumen de resultados
+
+| Prueba | Dirección | Download | Upload | Latencia | Retr |
+|--------|-----------|----------|--------|----------|------|
+| **Prueba 1** | Jitsi → Audio/Vídeo | 1.02 Gbits/s | 1.02 Gbits/s | <1ms | 24 / 0 |
+| **Prueba 2** | Audio/Vídeo → Jitsi | 1.02 Gbits/s | 1.02 Gbits/s | <1ms | 0 / 25 |
+
+---
+
+### Análisis y relación con los servicios
+
+**Streaming de audio — Icecast2:**
+```
+Listeners máximos = Ancho de banda disponible ÷ Bitrate por listener
+1.020 Mbits/s ÷ 0.128 Mbits/s = ~7.968 listeners simultáneos
+```
+
+**Streaming de vídeo — Nginx VOD:**
+```
+Caso conservador (5 Mbits/s): 1.020 ÷ 5 = 204 conexiones simultáneas
+Caso optimista   (2 Mbits/s): 1.020 ÷ 2 = 510 conexiones simultáneas
+```
+
+**Videoconferencia — Jitsi Meet (WebRTC):**
+```
+Caso conservador (4 Mbits/s): 1.020 ÷ 4 = 255 participantes simultáneos
+Caso optimista   (1 Mbits/s): 1.020 ÷ 1 = 1.020 participantes simultáneos
+```
+
+---
+
+### Clasificación del sistema
+
+> ✅ **SISTEMA CLASIFICADO COMO: ACEPTABLE**
+
+- Ancho de banda interno de **1.02 Gbits/s** — muy por encima de los requisitos de todos los servicios
+- Conexión **simétrica**: download y upload idénticos en ambas direcciones
+- **Latencia interna <1ms** entre instancias de la misma VPC
+- **Retransmisiones mínimas** — calidad de conexión excelente
+- Capacidad para soportar **miles de usuarios simultáneos** en todos los servicios
+
+---
+
+### Automatización de medidas de ancho de banda
+
+#### Qué hace
+
+Un script Bash (`test_amplada_bo.sh`) que se ejecuta automáticamente, mide el ancho de banda de la máquina multimedia e inserta los resultados directamente en la base de datos de InnovateTech.
+
+#### Cómo funciona
+
+- Ejecuta `speedtest-cli --simple` y extrae ping, bajada y subida
+- Evalúa si el resultado es `acceptable` (bajada >50 Mbit/s) o `no_acceptable`
+- Inserta automáticamente en la tabla `Mesures_Amplada_Banda` de la BD (`100.50.111.243`)
+- El umbral de 50 Mbit/s cubre ampliamente todos los servicios: audio (~0,5 Mbit/s), vídeo HD (~5 Mbit/s) y Jitsi (~2 Mbit/s)
+
+#### Ubicación del script
+
+```
+/home/ubuntu/scripts/test_amplada_bo.sh
+```
+
+#### Conexión a la BD
+
+| Parámetro | Valor |
+|-----------|-------|
+| Host | `100.50.111.243` |
+| Base de datos | `innovatetech` |
+| Tabla | `Mesures_Amplada_Banda` |
+
+#### Planificación cron (3 franjas)
+
+```cron
+# De 22:00 a 06:00 — cada hora (poco tráfico nocturno)
+0 22-23,0-6 * * * /home/ubuntu/scripts/test_amplada_bo.sh >> /var/log/speedtest.log 2>&1
+
+# De 06:00 a 14:00 — cada 15 minutos (franja laboral alta)
+*/15 6-13 * * * /home/ubuntu/scripts/test_amplada_bo.sh >> /var/log/speedtest.log 2>&1
+
+# De 14:00 a 22:00 — cada 30 minutos (franja laboral media)
+*/30 14-21 * * * /home/ubuntu/scripts/test_amplada_bo.sh >> /var/log/speedtest.log 2>&1
+```
+
+| Franja | Horas | Intervalo | Motivo |
+|--------|-------|-----------|--------|
+| Nocturna | 22:00–06:00 | Cada hora | Tráfico mínimo |
+| Mañana/mediodía | 06:00–14:00 | Cada 15 min | Máxima actividad laboral |
+| Tarde | 14:00–22:00 | Cada 30 min | Actividad moderada |
+
+#### Verificación
+
+**Ejecución manual del script:**
+
+```bash
+/home/ubuntu/scripts/test_amplada_bo.sh
+# Salida esperada: Insert fet: DOWN=... UP=... PING=... RESULTAT=acceptable
+```
+
+> 📷 **CAPTURA 22:** Terminal con la ejecución manual del script mostrando la salida `Insert fet: DOWN=... UP=... PING=... RESULTAT=acceptable`.
+
+**Crontab configurado:**
+
+```bash
+crontab -l
+```
+
+> 📷 **CAPTURA 23:** Terminal con `crontab -l` mostrando las 3 líneas de planificación configuradas.
+
+**Verificación en la BD:**
+
+```sql
+SELECT * FROM Mesures_Amplada_Banda ORDER BY id DESC LIMIT 3;
+```
+
+> 📷 **CAPTURA 24:** Terminal con el resultado de la consulta SQL mostrando las últimas 3 filas insertadas automáticamente por el script con los valores de DOWN, UP, PING y RESULTAT.
+
+**Log del script:**
+
+```bash
+cat /var/log/speedtest.log
+```
+
+> 📷 **CAPTURA 25:** Terminal con `cat /var/log/speedtest.log` mostrando varias entradas del historial de medidas.
+
+---
+
+### Propuestas de mejora
+
+| Mejora | Prioridad | Descripción |
+|--------|-----------|-------------|
+| **CDN (AWS CloudFront)** | Alta | Reducir latencia para clientes finales lejanos. La red interna es <1ms pero desde Europa puede ser >100ms |
+| **Elastic IP** | Alta | Evitar que la IP pública cambie en cada reinicio de la instancia en el Learner Lab |
+| **Load Balancer** | Media | Distribuir carga entre múltiples instancias si el número de usuarios crece significativamente |
+| **Monitorización (AWS CloudWatch)** | Media | Supervisar el ancho de banda en producción y detectar saturación antes de que afecte al servicio |
+
+[⬆ Volver al índice](#-tabla-de-contenidos)
 
 
 ## 6. Disseny e Implementació de la Base de Dades
