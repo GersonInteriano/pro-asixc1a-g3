@@ -1831,7 +1831,7 @@ S'han creat 4 rols a MariaDB amb permisos diferenciats seguint el principi de m�
 | Rol | Permisos |
 |-----|----------|
 | `admin` | `ALL PRIVILEGES` + `GRANT FILE` |
-| `vendes` | `SELECT/INSERT/UPDATE` sobre Clients, Comandes, Productes, Trucades, Usuaris, Config_Qualitat |
+| `vendes` | `SELECT/INSERT/UPDATE` sobre Clients, Comandes, Productes, Cistell, Trucades, Usuaris, Config_Qualitat |
 | `administracio` | `SELECT/INSERT/UPDATE` sobre Empleats, Departaments, Usuaris, Config_Qualitat, Mesures_Amplada_Banda |
 | `treballador` | `SELECT` sobre Productes, Cataleg_Videos, Config_Qualitat + `SELECT/INSERT` sobre Trucades |
 
@@ -1895,6 +1895,10 @@ SHOW VARIABLES LIKE 'event_scheduler';
 ---
 
 ### 6.7. Incidències i Solucions
+
+**Problema: Taula_Avisos usa motor MyISAM**
+
+La taula `Taula_Avisos` s'ha creat amb motor `MyISAM` en lloc d'`InnoDB`. Això és necessari perquè els triggers que insereixen a aquesta taula s'executen dins de transaccions que poden ser revertides (`ROLLBACK`). Amb `InnoDB`, si el trigger falla i la transacció es reverteix, el registre d'auditoria també desapareix. Amb `MyISAM`, les insercions a `Taula_Avisos` són permanents independentment del resultat de la transacció principal.
 
 **Problema: ERROR 1901 — CHECK clause no suportat**
 
