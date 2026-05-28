@@ -152,9 +152,11 @@ innovatetech-ldap	OpenLDAP	10.0.6.122	100.28.104.126
 innovatetech-db	MariaDB	10.0.0.208	100.50.111.243
 innovatetech-logs	Rsyslog + Ansible	10.0.9.98	3.208.185.55
 innovatetech-web	NGINX + PHP + SFTP	10.0.7.135	35.171.63.1
-innovatetech-media	Àudio/Vídeo/Jitsi	10.0.7.77	—
+
 La comunicació interna entre màquines es fa sempre per IP privada, que és permanent. Les IPs elàstiques s'utilitzen per a l'accés extern.
-> 📸 **CAPTURA:** Panell EC2 mostrant les 5 instàncies en estat running.
+> 📸 **CAPTURA:** Panell EC2 mostrant les 4 instàncies en estat running.
+<img width="900" height="346" alt="image" src="https://github.com/user-attachments/assets/8f099e21-a334-4320-a059-64d25d64fccf" />
+
 ---
 3. Par de claus SSH
 Per connectar-se a les instàncies EC2 de forma segura s'utilitza autenticació per clau pública/privada. Es va crear un par de claus RSA des de la consola AWS.
