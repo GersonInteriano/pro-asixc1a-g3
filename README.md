@@ -38,9 +38,10 @@
    - [6.6. Triggers, Events y Auditoría](#66-triggers-events-y-auditoria)
    - [6.7. Incidencias y Soluciones BD](#67-incidencias-y-soluciones-bd)
 7. [Comprobaciones de Rendimiento de Red](#7-comprobaciones-de-rendimiento-de-red)
-8. [Digitalización y Sostenibilidad](#8-digitalizacion-y-sostenibilidad)
-9. [Conclusiones](#9-conclusiones)
-10. [Anexos y Entregables](#10-anexos-y-entregables)
+8. [Seguridad logica monitorización y operaciones](#8-seguridad-logica-monitorizacion-y-operaciones)
+9. [Digitalización y Sostenibilidad](#9-digitalizacion-y-sostenibilidad)
+10. [Conclusiones](#10-conclusiones)
+11. [Anexos y Entregables](#11-anexos-y-entregables)
 
 ---
 
@@ -1394,15 +1395,56 @@ iperf3 -c 172.31.36.193 -p 5201 -t 10 -R
 
 ---
 
-## 8. Digitalización y Sostenibilidad
+## 8. Seguridad logica monitorización y operaciones
 
-*(Contenido aquí...)*
 
+### Monitorización
+
+Para la monitorización de nuestros equipos, tanto Linux como Windows, utilizaremos **ELK Stack + Metricbeat**:
+
+*   **Metricbeat** se instala en cada servidor (el Dell PowerEdge R250 local y las instancias EC2 en AWS) para recolectar métricas de CPU, memoria, disco y red.
+*   **Elasticsearch, Logstash y Kibana (ELK)** centralizan y visualizan todos los datos. Este stack se despliega dentro de nuestra VPC corporativa en AWS, por lo que no añade carga de procesamiento al CPD local y se beneficia de la escalabilidad de la nube.
+*   El sistema de monitorización local (Mini PC Intel NUC) se dedicará a supervisar la infraestructura de red (firewall, switch, router) mediante SNMP, complementando la visión de ELK. No utilizaremos Veyon, ya que está orientado a entornos de aula y no a servidores.
+
+### Copias de seguridad (Backups)
+
+La estrategia de backups se basa en el uso del **NAS QNAP TS-453D** como destino central, ubicado en el rack 2 de nuestro CPD local.
+
+*   **Servidores Linux**: utilizamos scripts personalizados con comandos como `tar` y `rsync` para generar copias completas e incrementales de configuraciones y datos de usuario.
+*   **Servidores Windows**: empleamos **Windows Server Backup** combinado con scripts de PowerShell para automatizar la copia del estado del sistema y del controlador de dominio secundario.
+*   **Destino**: todas las copias se envían directamente a carpetas dedicadas en el NAS corporativo, a través de una VLAN de gestión aislada. La frecuencia de las copias (diarias, semanales) depende de la volatilidad de los datos, que tras la migración a AWS es muy baja en el CPD local.
+*   El NAS está físicamente en nuestras instalaciones, en un armario cerrado y con acceso restringido, lo que garantiza un control total sobre los backups.
+
+### Configuración de RAID en el NAS
+
+Para el servidor de backups, empleamos el QNAP TS-453D con **tres discos duros configurados en RAID 5**.
+
+*   Esta configuración nos proporciona tolerancia a la caída de un disco: los datos y la paridad se distribuyen entre los tres, permitiendo reconstruir la información sin pérdida de servicio.
+*   La capacidad útil resultante equivale a la suma de dos de los discos, suficiente para el volumen de copias que manejamos.
+*   Descartamos explícitamente RAID 10 para este equipo porque el servidor de audio y streaming ya no reside en el CPD local (sus volúmenes se gestionan en AWS con EBS), y porque para una carga de trabajo de backup secuencial prima más la capacidad que el rendimiento de escritura extremo.
+
+### Prevención de riesgos laborales (PRL)
+
+Los riesgos se han adaptado a las dimensiones reales de nuestro CPD de dos racks:
+
+*   **Riesgo eléctrico**: toda manipulación del cuadro eléctrico, SAIs y PDUs está reservada exclusivamente a personal técnico cualificado. Las instalaciones están certificadas y se revisan periódicamente.
+*   **Riesgo de incendio**: cubierto por las medidas de detección y extinción descritas en la sección 1.4 de Seguridad Física. El personal conoce la ubicación y el uso del extintor de CO₂ y las vías de evacuación.
+*   **Orden y caídas**: aplicamos un criterio estricto de cableado estructurado, eliminando el cable por el suelo y manteniendo los pasillos alrededor de los racks libres de obstáculos.
+*   **Ruido**: los niveles sonoros son moderados (<60 dB) y no requieren protección obligatoria, pero se recomiendan pausas si la permanencia en la sala es prolongada.
+
+## 9. Digitalización y sostenibilidad
+Nuestro CPD en Barcelona se alinea con los criterios de sostenibilidad de la empresa mediante estas acciones concretas:
+
+*   **Energía verde**: el contrato eléctrico del edificio garantiza el suministro 100% renovable, reduciendo la huella de carbono del CPD.
+*   **Monitorización del consumo**: los SAIs APC SMTL1500RMI3UC reportan el consumo eléctrico en tiempo real vía SNMP, permitiéndonos auditar y optimizar el gasto energético.
+*   **Cableado optimizado**: la topología física del rack concentra las conexiones (Top of Rack lógico), usando latiguillos de red de la longitud justa para minimizar pérdidas y costes.
+*   **Gestión de equipos inactivos**: la consola KVM y la pantalla asociada se apagan automáticamente tras 30 minutos sin uso. El resto de equipos (firewall, switch, servidor, NAS) deben permanecer encendidos 24/7 para asegurar la conectividad con AWS y la recepción de backups.
+*   **Climatización**: dado el bajo consumo de los equipos (menos de 500 W en total), la refrigeración se resuelve con la propia ventilación de los racks y, si es necesario, con el sistema de aire acondicionado del edificio ajustado a 26 °C. No necesitamos free‑cooling ni costosos sistemas de precisión.
 [⬆ Volver al índice](#tabla-de-contenidos)
 
 ---
 
-## 9. Conclusiones
+## 10. Conclusiones
 
 El proyecto InnovateTech ha culminado con el despliegue de una infraestructura tecnológica híbrida que cubre, de forma integrada, todos los requisitos planteados en el enunciado. No se trata únicamente de un conjunto de servicios funcionando en paralelo: es un ecosistema donde cada pieza ha sido diseñada para complementar a las demás.
 
@@ -1424,7 +1466,7 @@ Como reflexión final, este proyecto ha puesto de manifiesto que la tecnología,
 
 ---
 
-## 10. Anexos y Entregables
+## 11. Anexos y Entregables
 
 *(Contenido aquí...)*
 
