@@ -173,6 +173,9 @@ Permisos a Linux/Ubuntu:
 chmod 400 ~/Baixades/innovatetech-key.pem
 ```
 > �📸 **CAPTURA:** Creació del Key Pair a la consola AWS.
+> <img width="1675" height="202" alt="image" src="https://github.com/user-attachments/assets/0150a8fc-4c46-411a-a0ad-a0cd78e428d0" />
+
+
 ---
 4. VPC
 Una VPC (Virtual Private Cloud) és la xarxa privada virtual dins d'AWS que aïlla els recursos. És equivalent a tenir una xarxa local pròpia al núvol.
@@ -183,6 +186,7 @@ Internet Gateway: creat i associat automàticament
 NAT Gateway: cap (redueix costos)
 DNS hostnames: activat
 > 📸 **CAPTURA:** Diagrama de la VPC a la consola AWS.
+> <img width="1662" height="766" alt="image" src="https://github.com/user-attachments/assets/6c61f9ae-6328-4e81-9c25-0b21634f03da" />
 ---
 5. Security Group
 El Security Group és el firewall virtual d'AWS. S'ha configurat seguint el principi de mínim privilegi: els ports sensibles només són accessibles des de la xarxa interna.
@@ -199,6 +203,8 @@ Port	Protocol	Origen	Servei
 8000	TCP	0.0.0.0/0	Icecast àudio
 10000	TCP/UDP	0.0.0.0/0	Jitsi Meet
 > 📸 **CAPTURA:** Regles d'entrada del Security Group.
+> <img width="1629" height="560" alt="image" src="https://github.com/user-attachments/assets/3ade7b5c-33c9-4c14-b364-f6db428f977b" />
+
 ---
 6. Instàncies EC2
 5 instàncies EC2 amb Ubuntu Server 24.04 LTS, t2.micro (1 vCPU, 1 GB RAM). Es va escollir Ubuntu 24.04 per la seva estabilitat i àmplia documentació. El tipus t2.micro és l'opció gratuïta de les comptes AWS Academy.
@@ -207,8 +213,9 @@ innovatetech-web	8 GiB	NGINX + PHP + SFTP
 innovatetech-ldap	8 GiB	OpenLDAP
 innovatetech-logs	8 GiB	Rsyslog + Ansible
 innovatetech-db	8 GiB	MariaDB
-innovatetech-media	20 GiB	Àudio/Vídeo/Jitsi
-> 📸 **CAPTURA:** Llistat de les 5 instàncies EC2 en estat running amb les comprovacions en verd.
+> 📸 **CAPTURA:** Llistat de les 4 instàncies EC2 en estat running amb les comprovacions en verd.
+> <img width="1179" height="335" alt="image" src="https://github.com/user-attachments/assets/1160b450-a360-4d0f-bde8-62e9e2580be7" />
+
 ---
 7. IPs elàstiques
 Les comptes d'AWS Academy canvien les IPs públiques a cada reinici del laboratori. Per solucionar-ho s'han assignat IPs elàstiques (estàtiques) a les màquines principals.
@@ -218,6 +225,8 @@ innovatetech-db	10.0.0.208	100.50.111.243
 innovatetech-logs	10.0.9.98	3.208.185.55
 innovatetech-web	10.0.7.135	35.171.63.1
 > 📸 **CAPTURA:** Llistat d'IPs elàstiques a la consola AWS.
+> <img width="1680" height="274" alt="image" src="https://github.com/user-attachments/assets/ce13248e-32cc-460e-a3eb-6398ed8ec02e" />
+
 ---
 8. Usuari admintech
 El projecte exigeix que les màquines s'administrin amb un usuari específic, no el per defecte (`ubuntu`). Es va crear l'usuari `admintech` a totes les màquines amb accés per clau pública/privada i sudo sense contrasenya per facilitar l'automatització amb Ansible.
