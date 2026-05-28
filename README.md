@@ -1056,11 +1056,8 @@ FLUSH PRIVILEGES;
 | Port | `3306` |
 | Usuari | `admin` |
 
-> 📸 **CAPTURA:** `systemctl status mariadb` mostrant el servei actiu.
 > <img width="880" height="334" alt="image" src="https://github.com/user-attachments/assets/fb86346a-4c46-4cc8-a530-367de08cd806" />
-
-> 📸 **CAPTURA:** SHOW TABLES a la BD innovatetech.
-> <img width="781" height="286" alt="image" src="https://github.com/user-attachments/assets/7d2e7bb3-f6ca-4b03-bb54-6fc24fafc506" />
+> 📸 **CAPTURA:** `systemctl status mariadb` mostrant el servei actiu.
 
 ### 6.4. Script de Creación de Usuarios
 
