@@ -120,204 +120,136 @@ Para una gestión eficiente, la infraestructura se divide en dos armarios Rack d
 
 ## 3. Despliegue en el Núvol (AWS) <a name="3-despliegue-en-el-nuvol-aws"></a>
 
-## Introducció
-
-Aquest document recull tota la infraestructura desplegada al núvol AWS per a l'empresa fictícia **InnovateTech**, una empresa dedicada a la provisió de serveis tecnològics. L'objectiu és dissenyar i implementar un Centre de Processament de Dades (CPD) virtual al núvol que doni suport a totes les operacions de l'empresa, incloent-hi la gestió d'usuaris, la distribució de continguts multimèdia i la comunicació interna.
-
-Tota la infraestructura s'ha desplegat a la regió `us-east-1` (N. Virginia) d'AWS, aprofitant els serveis de còmput, xarxa i emmagatzematge que ofereix el núvol per construir una solució escalable, segura i amb alta disponibilitat.
-
+Índex
+Introducció
+Arquitectura general
+Par de claus SSH
+VPC
+Security Group
+Instàncies EC2
+IPs elàstiques
+Usuari admintech
+OpenLDAP
+NGINX + PHP + Web corporativa
+SFTP autenticat amb LDAP
+Rsyslog — Centralització de logs
+MariaDB
+Ansible
+Aplicació web — Gestió BD i Streaming
+Problemes i solucions
 ---
-
-## Índex
-3.1. [Infraestructura general](#1-infraestructura-general)
-3.2. [Par de claus SSH](#2-par-de-claus-ssh)
-3.3. [VPC — Xarxa privada virtual](#3-vpc--xarxa-privada-virtual)
-3.4. [Security Group — Firewall](#4-security-group--firewall)
-3.5. [Instàncies EC2](#5-instàncies-ec2)
-3.6. [IPs elàstiques](#6-ips-elàstiques)
-3.7. [Usuari admintech](#7-usuari-admintech)
-3.8. [OpenLDAP — Directori actiu](#8-openldap--directori-actiu)
-3.9. [NGINX — Servidor web](#9-nginx--servidor-web)
-3.10. [SFTP autenticat amb LDAP](#10-sftp-autenticat-amb-ldap)
-3.11. [Rsyslog — Centralització de logs](#11-rsyslog--centralització-de-logs)
-3.12. [MariaDB — Base de dades](#12-mariadb--base-de-dades)
-3.13. [Ansible — Automatització](#13-ansible--automatització)
-3.14. [Problemes i solucions](#14-problemes-i-solucions)
-
+1. Introducció
+Aquest document recull tota la infraestructura desplegada al núvol AWS per a l'empresa fictícia InnovateTech, una empresa dedicada a la provisió de serveis tecnològics. L'objectiu és dissenyar i implementar un Centre de Processament de Dades (CPD) virtual al núvol que doni suport a totes les operacions de l'empresa.
+La infraestructura inclou gestió centralitzada d'usuaris via LDAP, servidor web corporatiu amb PHP, transferència segura de fitxers per departament via SFTP, centralització de logs de totes les màquines, base de dades MariaDB i automatització completa amb Ansible.
+Tota la infraestructura s'ha desplegat a la regió `us-east-1` (N. Virginia) d'AWS.
 ---
-
-## 3.1. Infraestructura general
-
-La infraestructura d'InnovateTech es basa en **4 instàncies EC2** interconnectades dins d'una mateixa VPC. Cada instància té un rol específic i els serveis estan separats per màquina per garantir l'aïllament, la seguretat i la facilitat de manteniment.
-
-La comunicació entre màquines es fa sempre per **IP privada**, que és permanent i no canvia entre sessions. Les IPs públiques (elàstiques) s'utilitzen únicament per a l'accés extern des d'internet.
-
-| Màquina | Servei | IP Privada | IP Elàstica |
-|---------|--------|------------|-------------|
-| innovatetech-ldap | OpenLDAP | 10.0.6.122 | 100.28.104.126 |
-| innovatetech-db | MariaDB | 10.0.0.208 | 100.50.111.243 |
-| innovatetech-logs | Rsyslog | 10.0.9.98 | 3.208.185.55 |
-| innovatetech-web | NGINX + SFTP | 10.0.7.135 | 35.171.63.1 |
-
-<img width="900" height="346" alt="image" src="https://github.com/user-attachments/assets/b873146f-4d17-46af-b7cc-565107bd2e72" />
-
-
+2. Arquitectura general
+Màquina	Servei	IP Privada	IP Elàstica
+innovatetech-ldap	OpenLDAP	10.0.6.122	100.28.104.126
+innovatetech-db	MariaDB	10.0.0.208	100.50.111.243
+innovatetech-logs	Rsyslog + Ansible	10.0.9.98	3.208.185.55
+innovatetech-web	NGINX + PHP + SFTP	10.0.7.135	35.171.63.1
+innovatetech-media	Àudio/Vídeo/Jitsi	10.0.7.77	—
+La comunicació interna entre màquines es fa sempre per IP privada, que és permanent. Les IPs elàstiques s'utilitzen per a l'accés extern.
+> 📸 **CAPTURA:** Panell EC2 mostrant les 5 instàncies en estat running.
 ---
-## 3.2. Par de claus SSH
-
-Per connectar-se a les instàncies EC2 de forma segura, AWS utilitza un sistema d'autenticació basat en claus pública/privada. En lloc de fer servir contrasenyes (que poden ser vulnerables a atacs de força bruta), es genera un parell de claus RSA: la clau pública es guarda a les màquines i la clau privada la té únicament l'administrador.
-
-Es va crear el parell de claus des de la consola AWS amb els paràmetres següents:
-- **Nom:** `innovatetech-key`
-- **Tipus:** RSA
-- **Format:** `.pem`
-
-Un cop descarregat el fitxer `.pem`, cal restringir-ne els permisos per evitar que SSH el rebutgi per ser "massa accessible".
-
-**A Windows (PowerShell):**
+3. Par de claus SSH
+Per connectar-se a les instàncies EC2 de forma segura s'utilitza autenticació per clau pública/privada. Es va crear un par de claus RSA des de la consola AWS.
+Nom: `innovatetech-key`
+Tipus: RSA
+Format: `.pem`
+Permisos a Windows:
 ```powershell
 icacls "C:\Users\gamer\Downloads\innovatetech-key.pem" /inheritance:r
 icacls "C:\Users\gamer\Downloads\innovatetech-key.pem" /grant:r "gamer:R"
 ```
-
-**A Ubuntu/Linux:**
+Permisos a Linux/Ubuntu:
 ```bash
 chmod 400 ~/Baixades/innovatetech-key.pem
 ```
-
-> 📸 **CAPTURA:** Pantalla de creació del Key Pair a la consola AWS.
-
+> �📸 **CAPTURA:** Creació del Key Pair a la consola AWS.
 ---
-
-## 3.3. VPC — Xarxa privada virtual
-
-Una **VPC (Virtual Private Cloud)** és una xarxa privada virtual dins d'AWS que aïlla els nostres recursos de la resta d'usuaris del núvol. És l'equivalent a tenir la nostra pròpia xarxa local, però al núvol. Sense VPC, les instàncies no es podrien comunicar entre elles de forma segura.
-
-S'ha creat una VPC amb una subxarxa pública que permet que les màquines tinguin accés a internet, necessari tant per a l'administració remota com per als serveis que han de ser accessibles externament.
-
-**Configuració:**
-- **Nom:** `innovatetech-vpc`
-- **CIDR IPv4:** `10.0.0.0/16` (65.536 adreces IP disponibles)
-- **Subxarxes:** 1 subxarxa pública
-- **Internet Gateway:** creat i associat automàticament
-- **NAT Gateway:** cap (no necessari i té cost addicional)
-- **DNS hostnames:** activat per poder resoldre noms de les instàncies
-
-> 📸 **CAPTURA:** Diagrama de la VPC a la consola AWS mostrant la subxarxa, l'Internet Gateway i la taula d'enrutament.
-
+4. VPC
+Una VPC (Virtual Private Cloud) és la xarxa privada virtual dins d'AWS que aïlla els recursos. És equivalent a tenir una xarxa local pròpia al núvol.
+Nom: `innovatetech-vpc`
+CIDR: `10.0.0.0/16`
+Subxarxa pública: 1
+Internet Gateway: creat i associat automàticament
+NAT Gateway: cap (redueix costos)
+DNS hostnames: activat
+> 📸 **CAPTURA:** Diagrama de la VPC a la consola AWS.
 ---
-## 3.4. Security Group — Firewall
-
-Un **Security Group** és el firewall virtual d'AWS que controla el tràfic entrant i sortint de les instàncies. S'han definit regles específiques per a cada servei, restringint l'accés als ports sensibles únicament a la xarxa interna `10.0.0.0/16` i deixant oberts al públic només els ports estrictament necessaris.
-
-Aquesta configuració segueix el principi de **mínim privilegi**: cada port només és accessible des d'on cal, i tot el que no s'especifica explícitament queda bloquejat.
-
-**Nom:** `innovatetech-sg`
-
-| Port | Protocol | Origen | Servei | Justificació |
-|------|----------|--------|--------|--------------|
-| 22 | TCP | 0.0.0.0/0 | SSH | Administració remota |
-| 80 | TCP | 0.0.0.0/0 | HTTP | Web pública |
-| 443 | TCP | 0.0.0.0/0 | HTTPS | Web segura |
-| 389 | TCP | 10.0.0.0/16 | LDAP | Només xarxa interna |
-| 636 | TCP | 10.0.0.0/16 | LDAPS | Només xarxa interna |
-| 3306 | TCP | 10.0.0.0/16 | MariaDB | Només xarxa interna |
-| 514 | TCP/UDP | 10.0.0.0/16 | Syslog | Només xarxa interna |
-| 1935 | TCP | 0.0.0.0/0 | RTMP | Streaming vídeo |
-| 8000 | TCP | 0.0.0.0/0 | Icecast | Streaming àudio |
-| 10000 | TCP/UDP | 0.0.0.0/0 | Jitsi | Videoconferències |
-
-> 📸 **CAPTURA:** Regles d'entrada del Security Group a la consola AWS.
-
+5. Security Group
+El Security Group és el firewall virtual d'AWS. S'ha configurat seguint el principi de mínim privilegi: els ports sensibles només són accessibles des de la xarxa interna.
+Nom: `innovatetech-sg`
+Port	Protocol	Origen	Servei
+22	TCP	0.0.0.0/0	SSH
+80	TCP	0.0.0.0/0	HTTP
+443	TCP	0.0.0.0/0	HTTPS
+389	TCP	10.0.0.0/16	LDAP (intern)
+636	TCP	10.0.0.0/16	LDAPS (intern)
+3306	TCP	10.0.0.0/16	MariaDB (intern)
+514	TCP/UDP	10.0.0.0/16	Syslog (intern)
+1935	TCP	0.0.0.0/0	RTMP streaming
+8000	TCP	0.0.0.0/0	Icecast àudio
+10000	TCP/UDP	0.0.0.0/0	Jitsi Meet
+> 📸 **CAPTURA:** Regles d'entrada del Security Group.
 ---
-## 3.5. Instàncies EC2
-
-Les instàncies **EC2 (Elastic Compute Cloud)** són els servidors virtuals d'AWS. S'han llançat 4 instàncies, cadascuna amb un rol específic, seguint el principi de separació de serveis per garantir l'aïllament i la seguretat.
-
-S'ha escollit **Ubuntu Server 24.04 LTS** com a sistema operatiu perquè és una distribució estable, àmpliament suportada i amb una gran comunitat. El tipus **t2.micro** és l'opció gratuïta disponible a les comptes d'AWS Academy i és suficient per als serveis que s'han de desplegar en un entorn de proves.
-
-**Configuració comuna de totes les instàncies:**
-- **AMI:** Ubuntu Server 24.04 LTS (HVM)
-- **Tipus d'instància:** t2.micro (1 vCPU, 1 GB RAM)
-- **Key pair:** `innovatetech-key`
-- **VPC:** `innovatetech-vpc`
-- **Subxarxa:** pública
-- **IP pública automàtica:** activada
-- **Security Group:** `innovatetech-sg`
-
-| Instància | Storage | Motiu |
-|-----------|---------|-------|
-| innovatetech-web | 8 GiB | Suficient per NGINX |
-| innovatetech-ldap | 8 GiB | Suficient per OpenLDAP |
-| innovatetech-logs | 8 GiB | Suficient per rsyslog |
-| innovatetech-db | 8 GiB | Suficient per MariaDB |
-
-> 📸 **CAPTURA:** Llistat de les 4 instàncies EC2 en estat "running" amb totes les comprovacions en verd.
-
+6. Instàncies EC2
+5 instàncies EC2 amb Ubuntu Server 24.04 LTS, t2.micro (1 vCPU, 1 GB RAM). Es va escollir Ubuntu 24.04 per la seva estabilitat i àmplia documentació. El tipus t2.micro és l'opció gratuïta de les comptes AWS Academy.
+Instància	Storage	Servei
+innovatetech-web	8 GiB	NGINX + PHP + SFTP
+innovatetech-ldap	8 GiB	OpenLDAP
+innovatetech-logs	8 GiB	Rsyslog + Ansible
+innovatetech-db	8 GiB	MariaDB
+innovatetech-media	20 GiB	Àudio/Vídeo/Jitsi
+> 📸 **CAPTURA:** Llistat de les 5 instàncies EC2 en estat running amb les comprovacions en verd.
 ---
-## 3.6. IPs elàstiques
-
-Un dels problemes de les comptes d'AWS Academy és que les **IPs públiques canvien cada vegada que es reinicia el laboratori**. Això és un problema perquè caldria actualitzar les configuracions a cada sessió.
-
-La solució és assignar **IPs elàstiques** a les màquines principals. Una IP elàstica és una adreça IP pública estàtica reservada al nostre compte que no canvia mai, independentment de si la instància s'atura o es reinicia.
-
-Per a la comunicació **interna** entre màquines s'utilitzen les IPs privades, que també són permanents i no canvien mai.
-
-| Màquina | IP Privada (permanent) | IP Elàstica (permanent) |
-|---------|----------------------|------------------------|
-| innovatetech-ldap | 10.0.6.122 | 100.28.104.126 |
-| innovatetech-db | 10.0.0.208 | 100.50.111.243 |
-| innovatetech-logs | 10.0.9.98 | 3.208.185.55 |
-| innovatetech-web | 10.0.7.135 | 35.171.63.1 |
-
-> 📸 **CAPTURA:** Llistat d'IPs elàstiques a la consola AWS amb les instàncies associades.
-
+7. IPs elàstiques
+Les comptes d'AWS Academy canvien les IPs públiques a cada reinici del laboratori. Per solucionar-ho s'han assignat IPs elàstiques (estàtiques) a les màquines principals.
+Màquina	IP Privada (permanent)	IP Elàstica (permanent)
+innovatetech-ldap	10.0.6.122	100.28.104.126
+innovatetech-db	10.0.0.208	100.50.111.243
+innovatetech-logs	10.0.9.98	3.208.185.55
+innovatetech-web	10.0.7.135	35.171.63.1
+> 📸 **CAPTURA:** Llistat d'IPs elàstiques a la consola AWS.
 ---
-## 3.7. Usuari admintech
-
-El projecte exigeix que les màquines s'administrin amb un **usuari específic**, no el per defecte (`ubuntu`). Això és una bona pràctica de seguretat: limita l'exposició del compte per defecte i permet auditar millor qui fa cada acció.
-
-L'usuari `admintech` s'ha creat a totes les màquines amb les característiques següents:
-- Pertany al grup `sudo` per poder executar comandes com a administrador
-- L'accés es fa exclusivament amb **clau pública/privada**, sense contrasenya
-- Pot executar `sudo` sense contrasenya per facilitar l'automatització amb Ansible
-
+8. Usuari admintech
+El projecte exigeix que les màquines s'administrin amb un usuari específic, no el per defecte (`ubuntu`). Es va crear l'usuari `admintech` a totes les màquines amb accés per clau pública/privada i sudo sense contrasenya per facilitar l'automatització amb Ansible.
 ```bash
-# Creació de l'usuari
 sudo adduser --disabled-password --gecos '' admintech
 sudo usermod -aG sudo admintech
-
-# Configuració de l'accés per clau
 sudo mkdir -p /home/admintech/.ssh
 sudo cp /home/ubuntu/.ssh/authorized_keys /home/admintech/.ssh/
 sudo chown -R admintech:admintech /home/admintech/.ssh
 sudo chmod 700 /home/admintech/.ssh
 sudo chmod 600 /home/admintech/.ssh/authorized_keys
-
-# Sudo sense contrasenya (necessari per Ansible)
 echo 'admintech ALL=(ALL) NOPASSWD:ALL' | sudo tee /etc/sudoers.d/admintech
 ```
+Connexió SSH:
+```bash
+# Linux/Ubuntu
+ssh -i ~/Baixades/innovatetech-key.pem admintech@IP_MAQUINA
 
-> 📸 **CAPTURA:** Connexió SSH a una de les màquines amb l'usuari admintech mostrant el prompt.
-
+# Windows PowerShell
+ssh -i "C:\Users\gamer\Downloads\innovatetech-key.pem" admintech@IP_MAQUINA
+```
+> 📸 **CAPTURA:** Connexió SSH amb usuari admintech.
 ---
-## 3.8. OpenLDAP — Directori actiu
-
-**OpenLDAP** és un servidor de directori de codi obert que implementa el protocol LDAP (Lightweight Directory Access Protocol). S'utilitza per centralitzar la gestió d'usuaris i grups de l'empresa, de manera que un usuari es crea una sola vegada i pot autenticar-se a múltiples serveis (SFTP, web, etc.) amb les mateixes credencials.
-
-S'ha instal·lat a la màquina `innovatetech-ldap` i s'ha configurat el domini `innovatetech.local` com a base del directori.
-
-### Estructura organitzativa
-
-L'estructura del directori reflecteix l'organigrama de l'empresa, amb 4 departaments i els seus respectius grups i usuaris:
-
+9. OpenLDAP
+OpenLDAP centralitza la gestió d'usuaris i grups de l'empresa. Un usuari es crea una sola vegada i pot autenticar-se a múltiples serveis (SFTP, web) amb les mateixes credencials.
+Servidor: `innovatetech-ldap` (10.0.6.122 / 100.28.104.126)
+Domini: `innovatetech.local`
+Admin: `cn=admin,dc=innovatetech,dc=local` / contrasenya: `12345`
+Estructura del directori
 ```
 dc=innovatetech,dc=local
 ├── ou=usuarios
-│   ├── ou=vendes        → venda1, venda2, venda3
-│   ├── ou=suport        → suport1, suport2, suport3
+│   ├── ou=vendes      → venda1, venda2, venda3
+│   ├── ou=suport      → suport1, suport2, suport3
 │   ├── ou=administracio → admin1, admin2, admin3
-│   └── ou=logistica     → logis1, logis2, logis3
+│   ├── ou=logistica   → logis1, logis2, logis3
+│   └── ou=admin       → bd1, bd2, bd3
 └── ou=grupos
     ├── cn=admin         (gid 3000)
     ├── cn=vendes        (gid 3001)
@@ -326,110 +258,78 @@ dc=innovatetech,dc=local
     ├── cn=suport        (gid 3004)
     └── cn=logistica     (gid 3005)
 ```
-
-### Instal·lació
+Usuaris
+Departament	Usuaris	GID	Contrasenya
+Vendes	venda1, venda2, venda3	3001	12345
+Administració	admin1, admin2, admin3	3002	12345
+Suport tècnic	suport1, suport2, suport3	3004	12345
+Logística	logis1, logis2, logis3	3005	12345
+Gestió BD	bd1, bd2, bd3	3000	bd1234
+Instal·lació
 ```bash
 sudo apt update && sudo apt upgrade -y
 sudo apt install slapd ldap-utils -y
 sudo dpkg-reconfigure slapd
 ```
-
-### Verificació del servei
+Verificació
 ```bash
 sudo systemctl status slapd
 ldapsearch -x -H ldap://localhost -b "dc=innovatetech,dc=local"
 ldapsearch -x -H ldap://localhost -b "ou=usuarios,dc=innovatetech,dc=local"
 ```
-
-> 📸 **CAPTURA:** Resultat del ldapsearch mostrant la estructura completa amb tots els usuaris i grups.
-
-> 📸 **CAPTURA:** systemctl status slapd mostrant el servei actiu i en execució.
-
+> 📸 **CAPTURA:** ldapsearch mostrant tota l'estructura amb usuaris i grups.
+> 📸 **CAPTURA:** systemctl status slapd actiu.
 ---
-## 3.9. NGINX — Servidor web
-
-**NGINX** és un servidor web d'alt rendiment escollit per la seva eficiència i la seva àmplia adopció en entorns empresarials. S'ha instal·lat a la màquina `innovatetech-web` i s'ha configurat un Virtual Host per servir la pàgina corporativa d'InnovateTech.
-
-S'ha escollit NGINX per sobre d'Apache perquè és el que s'ha practicat a classe i perquè el seu model de gestió de connexions asíncrones el fa més eficient per a càrregues elevades.
-
-### Instal·lació i configuració
+10. NGINX + PHP + Web corporativa
+NGINX és el servidor web instal·lat a `innovatetech-web`. S'ha configurat amb PHP 8.3 FPM per servir l'aplicació web corporativa d'InnovateTech.
+Instal·lació
 ```bash
-sudo apt install nginx -y
+sudo apt install nginx php8.3-fpm php8.3-mysql php8.3-ldap -y
 sudo mkdir -p /var/www/innovatetech
 ```
-
-### Virtual Host `/etc/nginx/sites-available/innovatetech`
+Virtual Host `/etc/nginx/sites-available/innovatetech`
 ```nginx
 server {
     listen 80;
-    server_name 35.171.63.1;
+    server_name _;
     root /var/www/innovatetech;
-    index index.html;
+    index index.php index.html;
+
     location / {
         try_files $uri $uri/ =404;
     }
+
+    location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/var/run/php/php8.3-fpm.sock;
+    }
 }
 ```
-
-### Activació
-```bash
-sudo ln -s /etc/nginx/sites-available/innovatetech /etc/nginx/sites-enabled/
-sudo rm /etc/nginx/sites-enabled/default
-sudo systemctl restart nginx
-```
-
-La pàgina web corporativa és accessible des de:
-- **IP:** http://35.171.63.1
-- **Domini:** http://innovatetech-itb.duckdns.org (DuckDNS gratuït)
-
-> 📸 **CAPTURA:** Pàgina web d'InnovateTech oberta al navegador mostrant el domini DuckDNS.
-
-> 📸 **CAPTURA:** systemctl status nginx mostrant el servei actiu.
-
+Accés
+IP: http://35.171.63.1
+Domini: http://innovatetech-itb.duckdns.org (DuckDNS gratuït)
+> 📸 **CAPTURA:** Pàgina web d'InnovateTech al navegador.
 ---
-
-
-## 10. SFTP autenticat amb LDAP
-
-El servei **SFTP (SSH File Transfer Protocol)** permet la transferència segura de fitxers entre clients i el servidor. S'ha configurat per departament, de manera que cada grup d'usuaris té accés exclusivament a la seva carpeta, sense poder veure les carpetes dels altres departaments. L'autenticació es fa directament contra el servidor LDAP, de manera que els usuaris utilitzen les mateixes credencials que al directori actiu.
-
-### Com funciona
-1. L'usuari LDAP es connecta per SFTP amb el seu usuari i contrasenya
-2. El sistema consulta LDAP per verificar les credencials (`libpam-ldap`)
-3. El sistema identifica el grup al qual pertany l'usuari (`libnss-ldap`)
-4. SSH aplica la regla `Match Group` corresponent i el confina (chroot) a la seva carpeta de departament
-5. L'usuari només pot veure i modificar fitxers de la seva carpeta
-
-### Paquets necessaris
+11. SFTP autenticat amb LDAP
+El servei SFTP permet la transferència segura de fitxers. Cada departament té la seva pròpia carpeta i els usuaris queden confinats (chroot) a ella. L'autenticació es fa directament contra LDAP.
+Com funciona
+L'usuari LDAP es connecta per SFTP amb uid i contrasenya
+`libpam-ldap` verifica les credencials contra LDAP
+`libnss-ldap` identifica el grup de l'usuari
+SSH aplica la regla `Match Group` i confina l'usuari a la seva carpeta
+Paquets
 ```bash
 sudo apt install libpam-ldap libnss-ldap ldap-utils nscd -y
 ```
-
-- `libpam-ldap` — connecta el sistema d'autenticació PAM amb LDAP
-- `libnss-ldap` — permet resoldre usuaris i grups des de LDAP
-- `nscd` — caché de noms per millorar el rendiment
-
-### Configuració `/etc/nsswitch.conf`
-```
-passwd:   files ldap
-group:    files ldap
-shadow:   files ldap
-```
-
-### Estructura de carpetes
+Estructura de carpetes
 ```
 /sftp/
-├── vendes/
-│   └── uploads/     ← venda1, venda2, venda3
-├── suport/
-│   └── uploads/     ← suport1, suport2, suport3
-├── administracio/
-│   └── uploads/     ← admin1, admin2, admin3
-└── logistica/
-    └── uploads/     ← logis1, logis2, logis3
+├── vendes/uploads/
+├── suport/uploads/
+├── administracio/uploads/
+└── logistica/uploads/
 ```
-
-### Regles chroot a `/etc/ssh/sshd_config`
+Configuració `/etc/ssh/sshd_config`
 ```
 Match Group vendes
     ChrootDirectory /sftp/vendes
@@ -451,138 +351,93 @@ Match Group logistica
     ForceCommand internal-sftp
     AllowTcpForwarding no
 ```
-
-### Prova de connexió
+Prova de connexió
 ```bash
 sftp venda1@35.171.63.1    # entra a /sftp/vendes
 sftp suport1@35.171.63.1   # entra a /sftp/suport
 sftp admin1@35.171.63.1    # entra a /sftp/administracio
 sftp logis1@35.171.63.1    # entra a /sftp/logistica
 ```
-
-> 📸 **CAPTURA:** Connexió SFTP amb venda1 mostrant la carpeta uploads i el fitxer de prova.
-
-> 📸 **CAPTURA:** Connexió SFTP amb suport1, admin1 i logis1 mostrant les seves respectives carpetes.
-
+> 📸 **CAPTURA:** Connexió SFTP amb venda1 mostrant la carpeta uploads.
+> 📸 **CAPTURA:** Connexió SFTP amb els 4 departaments.
 ---
-
-## 11. Rsyslog — Centralització de logs
-
-**Rsyslog** és un sistema de gestió de logs que permet centralitzar els registres de totes les màquines de la infraestructura en un únic servidor. Això és fonamental per a la monitorització i l'auditoria del sistema: en lloc d'haver d'entrar a cada màquina per revisar els seus logs, tots els registres es concentren a un sol lloc.
-
-S'ha configurat `innovatetech-logs` com a servidor central de logs, i la resta de màquines com a clients que envien els seus registres a aquest servidor per TCP (protocol `@@`) per garantir l'entrega.
-
-S'utilitza la **IP privada** `10.0.9.98` per a la comunicació entre màquines, ja que és permanent i no canvia entre sessions del laboratori.
-
-### Configuració del servidor (innovatetech-logs)
-
-S'activa la recepció de logs per UDP i TCP al fitxer `/etc/rsyslog.conf`:
+12. Rsyslog — Centralització de logs
+Rsyslog centralitza els registres de totes les màquines a `innovatetech-logs`. En lloc d'entrar a cada màquina per revisar els logs, tots es concentren en un sol lloc.
+S'utilitza la IP privada `10.0.9.98` per a la comunicació interna ja que és permanent.
+Configuració del servidor
+`/etc/rsyslog.conf` — activar recepció UDP i TCP:
 ```
 module(load="imudp")
 input(type="imudp" port="514")
 module(load="imtcp")
 input(type="imtcp" port="514")
 ```
-
-Es crea `/etc/rsyslog.d/remote.conf` per guardar els logs per màquina:
+`/etc/rsyslog.d/remote.conf`:
 ```
 $template RemoteLogs,"/var/log/remote/%HOSTNAME%/%PROGRAMNAME%.log"
 *.* ?RemoteLogs
 ```
-
-### Configuració dels clients (resta de màquines)
-
-A cada màquina es crea `/etc/rsyslog.d/client.conf`:
+Configuració dels clients
+`/etc/rsyslog.d/client.conf` a cada màquina:
 ```
 *.* @@10.0.9.98:514
 ```
-
-### Verificació
+Verificació
 ```bash
 sudo ls /var/log/remote/
-# Resultat esperat:
 # ip-10-0-6-122  ip-10-0-0-208  ip-10-0-7-135  ip-10-0-7-77  ip-10-0-9-98
 ```
-
-> 📸 **CAPTURA:** Resultat de `ls /var/log/remote/` mostrant les carpetes de totes les màquines.
-
-> 📸 **CAPTURA:** Contingut de la carpeta d'una màquina mostrant els fitxers de log rebuts.
-
+> 📸 **CAPTURA:** `ls /var/log/remote/` mostrant les carpetes de totes les màquines.
 ---
-
-## 12. MariaDB — Base de dades
-
-**MariaDB** és un sistema gestor de bases de dades relacional de codi obert, compatible al 100% amb MySQL. S'ha instal·lat a la màquina `innovatetech-db` per allotjar la base de dades integral de l'empresa.
-
-S'ha escollit MariaDB per sobre de MySQL perquè és més lleugera (important en una instància t2.micro amb només 1 GB de RAM), és de codi obert sense restriccions de llicència i els repositoris d'Ubuntu 24.04 la ofereixen com l'opció per defecte.
-
-### Instal·lació i securització
+13. MariaDB
+MariaDB s'instal·la a `innovatetech-db` per allotjar la base de dades integral d'InnovateTech. Es va escollir MariaDB per ser més lleugera que MySQL i compatible al 100%.
+Instal·lació
 ```bash
 sudo apt install mariadb-server -y
 sudo mysql_secure_installation
 ```
-
-La comanda `mysql_secure_installation` és fonamental per securitzar la instal·lació: elimina usuaris anònims, desactiva l'accés remot de root i elimina la base de dades de proves que ve per defecte.
-
-### Configuració per accés remot
-
-Per permetre que les aplicacions i el companyons es connectin des d'altres màquines, es modifica `/etc/mysql/mariadb.conf.d/50-server.cnf`:
+Configuració accés remot `/etc/mysql/mariadb.conf.d/50-server.cnf`
 ```
 bind-address = 0.0.0.0
 ```
-
-### Creació de l'usuari d'accés
+Usuari d'accés
 ```sql
 CREATE USER 'admin'@'%' IDENTIFIED BY '12345';
 GRANT ALL PRIVILEGES ON *.* TO 'admin'@'%' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
 ```
-
-**Dades de connexió per al company de BD:**
-- **Host:** `10.0.0.208` (xarxa interna) / `100.50.111.243` (accés extern)
-- **Port:** `3306`
-- **Usuari:** `admin`
-- **Contrasenya:** `12345`
-
-> 📸 **CAPTURA:** systemctl status mariadb mostrant el servei actiu.
-
-> 📸 **CAPTURA:** Connexió a MariaDB i resultat de SHOW DATABASES.
-
+Dades de connexió
+Host: `10.0.0.208` (intern) / `100.50.111.243` (extern)
+Port: `3306`
+Usuari: `admin` / Contrasenya: `12345`
+Taules de la BD innovatetech
+```
+Cataleg_Videos, Clients, Comandes, Config_Qualitat,
+Control_Backup, Departaments, Empleats, Mesures_Amplada_Banda,
+Productes, Taula_Avisos, Trucades, Usuaris
+```
+> 📸 **CAPTURA:** systemctl status mariadb actiu.
+> 📸 **CAPTURA:** SHOW TABLES a la BD innovatetech.
 ---
-
-## 13.Ansible — Automatització d'InnovateTech
-Introducció
-Ansible és una eina d'automatització de configuració que permet gestionar múltiples servidors des d'un únic node controlador, sense necessitat d'instal·lar cap agent a les màquines gestionades. Funciona per SSH, executant tasques definides en fitxers YAML anomenats playbooks.
-A InnovateTech s'ha configurat `innovatetech-logs` (10.0.9.98) com a node controlador. S'han creat playbooks capaços de crear instàncies EC2 des de zero, assignar-los una IP elàstica, crear l'usuari `admintech` i configurar el servei complet de forma totalment automatitzada.
----
-Estructura de fitxers
+14. Ansible
+Ansible automatitza la configuració de servidors des del node controlador `innovatetech-logs`. S'han creat playbooks capaços de crear instàncies EC2 des de zero i configurar-les completament.
+Estructura
 ```
 ~/ansible/
 ├── ansible.cfg
 ├── update-credentials.sh
-├── inventory/
-│   └── hosts
+├── inventory/hosts
 ├── roles/
-│   ├── provision/
-│   │   └── tasks/
-│   │       └── main.yml
-│   ├── web/
-│   │   ├── tasks/
-│   │   │   └── main.yml
-│   │   └── files/
-│   │       └── index.php
-│   └── ldap/
-│       └── tasks/
-│           └── main.yml
+│   ├── provision/tasks/main.yml
+│   ├── web/tasks/main.yml + files/index.php
+│   └── ldap/tasks/main.yml
 ├── playbook-web.yml
 ├── playbook-ldap.yml
 ├── playbook-eliminar-web.yml
 ├── playbook-provision-web.yml
 └── playbook-provision-ldap.yml
 ```
----
-Configuració
-Inventari `inventory/hosts`
+Inventari
 ```ini
 [web]
 10.0.7.135
@@ -594,305 +449,195 @@ Inventari `inventory/hosts`
 ansible_user=admintech
 ansible_ssh_private_key_file=/home/admintech/.ssh/id_rsa
 ```
-`ansible.cfg`
-```ini
-[defaults]
-inventory = inventory/hosts
-private_key_file = ~/.ssh/id_rsa
-remote_user = admintech
-host_key_checking = False
-deprecation_warnings = False
-
-[privilege_escalation]
-become = True
-become_method = sudo
-become_user = root
-```
 Credencials AWS
-Les comptes d'AWS Academy tenen credencials temporals que canvien cada sessió (~4 hores). Es gestionen amb el script `update-credentials.sh`.
-Al inici de cada sessió:
-Anar al panell AWS Academy → Show a "AWS CLI"
-Copiar les credencials a `~/.aws/credentials`:
-```
-[default]
-aws_access_key_id=TU_ACCESS_KEY
-aws_secret_access_key=TU_SECRET_KEY
-aws_session_token=TU_SESSION_TOKEN
-```
-Executar:
+Les credencials AWS es gestionen amb `update-credentials.sh`. Cal actualitzar-les a cada sessió del lab:
 ```bash
+# 1. Actualitzar ~/.aws/credentials amb les noves credencials
+nano ~/.aws/credentials
+
+# 2. Exportar-les
 source ~/ansible/update-credentials.sh
 ```
----
-Rols
-Rol `provision`
-Crea una nova instància EC2, assigna IP elàstica i configura l'usuari `admintech`.
-Tasques:
-Crea la instància EC2 (Ubuntu 24.04, t2.micro)
-Espera que SSH estigui disponible
-Assigna IP elàstica
-Mostra la IP assignada
-Crea l'usuari `admintech` a la nova instància (connectant com a `ubuntu`)
-Copia la clau pública al `authorized_keys` d'`admintech`
-Configura `sudo` sense contrasenya per a `admintech`
-Paràmetres AWS:
-AMI: `ami-05cf1e9f73fbad2e2` (Ubuntu 24.04 LTS)
-Tipus: `t2.micro`
-Subxarxa: `subnet-022a882efecf162cd`
-Security Group: `sg-053223c3c2a657989`
-Key pair: `innovatetech-key`
-Rol `web`
-Desplega completament el servidor web:
-Actualitza paquets
-Instal·la NGINX
-Instal·la PHP 8.3 + FPM + mysql + ldap
-Inicia PHP-FPM
-Crea directori `/var/www/innovatetech`
-Elimina `index.html` si existeix
-Desplega `index.php` (web corporativa amb gestió BD)
-Crea Virtual Host amb suport PHP
-Activa Virtual Host i elimina el per defecte
-Preconfigura i instal·la `libpam-ldap`, `libnss-ldap`, `nscd`
-Configura `nsswitch.conf` per LDAP
-Configura `ldap.conf` apuntant a `10.0.6.122`
-Crea carpetes SFTP per departament
-Configura chroot SFTP per grup
-Habilita `PasswordAuthentication`
-Reinicia SSH i NGINX
-Rol `ldap`
-Instal·la OpenLDAP des de zero amb tota l'estructura d'InnovateTech:
-Desinstal·la `slapd` amb `purge`
-Elimina fitxers residuals
-Preconfigura amb `debconf` (domini, organització, contrasenya)
-Instal·la `slapd`, `ldap-utils`, `python3-ldap`
-Inicia el servei
-Crea OUs: `usuarios`, `grupos`
-Crea OUs per departament: `vendes`, `suport`, `administracio`, `logistica`, `admin`
-Crea grups amb GIDs (3000-3005)
-Crea 12 usuaris de departament (3 per departament)
-Crea usuaris de gestió BD: `bd1`, `bd2`, `bd3` (contrasenya: `bd1234`)
----
 Playbooks
-`playbook-web.yml` i `playbook-ldap.yml`
-Configuren les màquines ja existents a l'inventari.
+Playbook	Funció
+`playbook-web.yml`	Configura màquina web existent
+`playbook-ldap.yml`	Configura màquina LDAP existent
+`playbook-eliminar-web.yml`	Elimina NGINX (simulació fallada)
+`playbook-provision-web.yml`	Crea EC2 nova + configura web complet
+`playbook-provision-ldap.yml`	Crea EC2 nova + configura LDAP complet
+Rol `provision`
+El rol més important. Crea una instància EC2, assigna IP elàstica i configura l'usuari admintech:
+Crea EC2 (Ubuntu 24.04, t2.micro)
+Espera SSH disponible
+Assigna IP elàstica
+Crea usuari `admintech` (connectant com a `ubuntu`)
+Copia clau pública a `authorized_keys`
+Configura sudo sense contrasenya
+Rol `web`
+Desplega el servidor web complet:
+NGINX + PHP 8.3 FPM
+Web corporativa `index.php`
+Integració LDAP per autenticació
+SFTP amb chroot per departament
+Rol `ldap`
+Instal·la OpenLDAP des de zero amb `debconf` per evitar preguntes interactives. Crea tota l'estructura: OUs, grups, 12 usuaris de departament i 3 usuaris de gestió BD (bd1, bd2, bd3).
+Execució
 ```bash
+# Configurar màquines existents
 cd ~/ansible
 ansible-playbook -i inventory/hosts playbook-web.yml
 ansible-playbook -i inventory/hosts playbook-ldap.yml
-```
-`playbook-eliminar-web.yml`
-Simula una fallada catastròfica eliminant NGINX completament.
-```bash
-ansible-playbook -i inventory/hosts playbook-eliminar-web.yml
-```
-`playbook-provision-web.yml`
-Crea una EC2 nova des de zero + configura el servidor web complet.
-```bash
+
+# Crear instàncies noves des de zero
 source ~/ansible/update-credentials.sh
 ansible-playbook playbook-provision-web.yml
-```
-`playbook-provision-ldap.yml`
-Crea una EC2 nova des de zero + configura OpenLDAP complet.
-```bash
-source ~/ansible/update-credentials.sh
 ansible-playbook playbook-provision-ldap.yml
-```
----
-Demostració recuperació de desastres
-```bash
-# 1. Eliminar NGINX (simulació de fallada)
+
+# Demostració recuperació de desastres
 ansible-playbook -i inventory/hosts playbook-eliminar-web.yml
-
-# 2. Verificar que la web no funciona
-curl -I http://35.171.63.1
-
-# 3. Recuperar el servei
 ansible-playbook -i inventory/hosts playbook-web.yml
-
-# 4. Verificar que funciona
-curl -I http://35.171.63.1
 ```
----
-Comprovacions
+Verificació
 ```bash
-# Ansible ping a totes les màquines
 cd ~/ansible && ansible all -m ping
-
-# LDAP
-ssh -i ~/.ssh/innovatetech-key.pem admintech@100.28.104.126 \
-  "ldapsearch -x -H ldap://localhost -b 'dc=innovatetech,dc=local' | grep dn"
-
-# Web
-curl -I http://35.171.63.1
-
-# Logs centralitzats
-sudo ls /var/log/remote/
-
-# MariaDB
-ssh -i ~/.ssh/innovatetech-key.pem admintech@100.50.111.243 \
-  "sudo mysql -u root -p12345 -e 'USE innovatetech; SHOW TABLES;'"
 ```
+> 📸 **CAPTURA:** `ansible all -m ping` amb totes les màquines en SUCCESS.
+> 📸 **CAPTURA:** Execució de `playbook-provision-web.yml` completada.
+> 📸 **CAPTURA:** Execució de `playbook-provision-ldap.yml` completada.
 ---
-Problemes i solucions
-NoCredentialsError
-Causa: El mòdul `amazon.aws` no llegeix les variables d'entorn automàticament.
-Solució: Passar credencials via `lookup('env', ...)` i exportar amb `source update-credentials.sh`.
-skipping: no hosts matched
-Causa: La IP de la nova instància no estava a l'inventari.
-Solució: Usar `add_host` als `post_tasks` per afegir dinàmicament la IP al grup temporal.
-Permission denied al crear admintech
-Causa: Les tasques de `delegate_to` intentaven connectar amb `admintech` però la instància nova només tenia `ubuntu`.
-Solució: Afegir `vars: ansible_user: ubuntu` a cada tasca `delegate_to`.
-AddressLimitExceeded
-Causa: Límit de 5 IPs elàstiques a les comptes Academy.
-Solució: Alliberar IPs elàstiques de les instàncies de prova abans d'executar els playbooks de provisió.
-index.php es descarrega en lloc d'executar-se
-Causa: El Virtual Host no tenia configuració PHP-FPM.
-Solució: Afegir al rol `web` la instal·lació de `php8.3-fpm` i el bloc `location ~ \.php$` al Virtual Host.
+15. Aplicació web — Gestió BD i Streaming
+L'aplicació web corporativa d'InnovateTech té tres seccions principals:
+Inici
+Pàgina corporativa amb estadístiques i accés ràpid als serveis.
+Streaming
+Enllaços als serveis multimèdia del company:
+Àudio: http://34.255.147.8:8080 (Icecast)
+Vídeo: https://54.227.77.10 (NGINX-RTMP)
+Gestió BD
+Sistema de gestió de base de dades amb autenticació LDAP:
+Accés restringit — només usuaris `bd1`, `bd2`, `bd3` (contrasenya: `bd1234`)
+Funcionalitats:
+Visualització de totes les taules de la BD
+Inserció de nous registres
+Eliminació de registres
+Navegació entre taules
+Taules accessibles:
+`Empleats`, `Clients`, `Departaments`, `Productes`, `Usuaris`, `Trucades`, `Cataleg_Videos`
+Autenticació:
+L'usuari introdueix `uid_ldap` i contrasenya
+El sistema verifica contra LDAP (`10.0.6.122`)
+Comprova que el `uid` comenci per `bd`
+Si és correcte, dóna accés a la gestió
+> 📸 **CAPTURA:** Pàgina d'inici de la web corporativa.
+> 📸 **CAPTURA:** Secció de streaming amb els dos serveis.
+> 📸 **CAPTURA:** Login de gestió BD.
+> 📸 **CAPTURA:** Taula d'empleats amb dades.
+> 📸 **CAPTURA:** Formulari d'inserció de registre.
 ---
-> 📸 **CAPTURA:** `ansible all -m ping` mostrant totes les màquines en SUCCESS
-> 📸 **CAPTURA:** Execució de `playbook-provision-web.yml` completada sense errors
-> 📸 **CAPTURA:** Execució de `playbook-provision-ldap.yml` completada sense errors
-> 📸 **CAPTURA:** Web funcionant a la nova instància creada per Ansible
-> 📸 **CAPTURA:** ldapsearch mostrant l'estructura completa creada pel playbook
----
-
----
-Problemes i solucions
-Problema — NoCredentialsError en els playbooks de provisió
-Causa: El mòdul `amazon.aws` d'Ansible usa la seva pròpia versió de boto3, que no llegeix automàticament les variables d'entorn exportades amb `source`.
-Solució: Passar les credencials explícitament als mòduls via `lookup('env', ...)` i exportar-les prèviament amb `source ~/ansible/update-credentials.sh`.
-Problema — `skipping: no hosts matched` al segon play
-Causa: La IP de la nova instància creada pel rol `provision` no estava a l'inventari, per la qual cosa Ansible no sabia on connectar-se per configurar-la.
-Solució: Usar `add_host` als `post_tasks` del primer play per afegir dinàmicament la nova IP a un grup temporal `nova_instancia`, que s'usa com a `hosts` al segon play.
-Problema — `AddressLimitExceeded` en assignar IP elàstica
-Causa: Les comptes d'AWS Academy tenen un límit de 5 IPs elàstiques simultànies.
-Solució: Alliberar les IPs elàstiques de les instàncies de prova abans d'executar els playbooks de provisió.
-Problema — Permission denied en connectar a la nova instància
-Causa: Ansible intentava connectar amb `~/.ssh/id_rsa` però la nova instància només accepta `innovatetech-key.pem`.
-Solució: Copiar el fitxer `.pem` al servidor de logs i especificar-lo a `ansible_ssh_private_key_file` al `add_host`.
----
-> 📸 **CAPTURA:** Execució de `playbook-provision-web.yml` mostrant totes les tasques completades.
-> 📸 **CAPTURA:** Pàgina web funcionant a la nova instància creada per Ansible.
-> 📸 **CAPTURA:** Execució de `playbook-provision-ldap.yml` mostrant totes les tasques completades.
-> 📸 **CAPTURA:** ldapsearch a la nova instància LDAP mostrant l'estructura creada per Ansible.
-
-
-## 14. Problemes i solucions
-
-Durant el desplegament de la infraestructura es van trobar diversos problemes. A continuació es detallen els més rellevants amb les seves solucions.
-
----
-
-### Problema 1 — Permisos del fitxer .pem a Windows
-
-**Descripció:** En intentar connectar-se per SSH des de Windows amb el fitxer `.pem`, SSH mostrava l'error "UNPROTECTED PRIVATE KEY FILE" i denegava la connexió perquè el fitxer era accessible per altres usuaris del sistema.
-
-**Causa:** Windows no restringeix automàticament els permisos dels fitxers descarregats, i SSH requereix que la clau privada només sigui llegible pel propietari.
-
-**Solució:**
+16. Problemes i solucions
+P1 — Permisos del fitxer .pem a Windows
+Problema: SSH rebutjava la clau privada per permisos massa oberts.
+Solució:
 ```powershell
 icacls "innovatetech-key.pem" /inheritance:r
 icacls "innovatetech-key.pem" /grant:r "gamer:R"
 icacls "innovatetech-key.pem" /remove "Pc-Ay-Ou\ayman"
 ```
-
----
-
-### Problema 2 — IPs públiques canvien cada sessió
-
-**Descripció:** Cada vegada que es reiniciava el laboratori d'AWS Academy, les IPs públiques de totes les instàncies canviaven, obligant a actualitzar totes les configuracions.
-
-**Causa:** Les comptes d'AWS Academy no mantenen les IPs públiques entre sessions per defecte.
-
-**Solució:** Es van assignar **IPs elàstiques** a les 4 màquines principals. Per a la comunicació interna entre serveis (rsyslog clients, configuració LDAP, etc.) s'utilitzen les **IPs privades**, que mai canvien.
-
----
-
-### Problema 3 — sudo demanava contrasenya en scripts remots
-
-**Descripció:** En executar comandes amb `sudo` via SSH de forma no interactiva (des de scripts PowerShell), el sistema demanava contrasenya i els scripts fallaven.
-
-**Causa:** L'usuari `admintech` estava configurat per demanar contrasenya per a `sudo`.
-
-**Solució:** Configurar `admintech` per a `sudo` sense contrasenya a totes les màquines:
+P2 — IPs públiques canvien cada sessió
+Problema: Les IPs públiques de les EC2 canvien a cada reinici del lab.
+Solució: Assignar IPs elàstiques a les màquines principals. Usar IPs privades per a la comunicació interna.
+P3 — sudo demanava contrasenya en scripts remots
+Problema: Els scripts automatitzats fallaven perquè sudo demanava contrasenya interactiva.
+Solució:
 ```bash
 echo 'admintech ALL=(ALL) NOPASSWD:ALL' | sudo tee /etc/sudoers.d/admintech
 ```
-
----
-
-### Problema 4 — PasswordAuthentication bloquejada per AWS
-
-**Descripció:** Els usuaris LDAP no podien connectar-se per SFTP amb contrasenya. L'error era "Permission denied (publickey)".
-
-**Causa:** AWS crea un fitxer `/etc/ssh/sshd_config.d/60-cloudimg-settings.conf` amb `PasswordAuthentication no` que **sobreescriu** la configuració del `sshd_config` principal, ja que els fitxers de la carpeta `.d/` tenen prioritat.
-
-**Solució:** Modificar específicament aquest fitxer:
+P4 — PasswordAuthentication bloquejada per AWS
+Problema: AWS crea `/etc/ssh/sshd_config.d/60-cloudimg-settings.conf` amb `PasswordAuthentication no` que sobreescriu el `sshd_config` principal.
+Solució:
 ```bash
 sudo sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' \
   /etc/ssh/sshd_config.d/60-cloudimg-settings.conf
-sudo systemctl restart ssh
 ```
-
+P5 — NGINX no arrencava després de reinstal·lació
+Problema: En eliminar `/etc/nginx` completament, en reinstal·lar el paquet no recreava el directori ni el `nginx.conf`.
+Solució: Crear una nova instància EC2 i desplegar-la amb Ansible, demostrant precisament la utilitat d'aquesta eina.
+P6 — Grups LDAP duplicats per suport i logística
+Problema: Els usuaris de `suport` i `logistica` compartien el gid `3003` i el chroot SFTP no funcionava.
+Solució: Crear grups específics: `suport` (gid 3004) i `logistica` (gid 3005). Usar noms de grup en lloc de gids numèrics a `Match Group`.
+P7 — Ansible instal·lat a la màquina incorrecta
+Problema: Ansible es va instal·lar a `innovatetech-web` en lloc de `innovatetech-logs`.
+Solució: Desinstal·lar del web i instal·lar al servidor de logs.
+P8 — ssh-copy-id denegat entre EC2
+Problema: No es podia copiar la clau pública d'Ansible entre màquines.
+Solució: Copiar manualment el contingut de la clau pública al `authorized_keys` de cada màquina des del terminal local.
+P9 — NoCredentialsError en playbooks de provisió
+Problema: El mòdul `amazon.aws` no llegia les variables d'entorn automàticament.
+Solució: Passar credencials via `lookup('env', ...)` i exportar amb `source update-credentials.sh`.
+P10 — skipping: no hosts matched al segon play
+Problema: La IP de la nova instància no estava a l'inventari.
+Solució: Usar `add_host` als `post_tasks` per afegir dinàmicament la IP al grup temporal `nova_instancia`.
+P11 — Permission denied al crear admintech via Ansible
+Problema: Les tasques `delegate_to` intentaven connectar amb `admintech` però la nova instància només tenia `ubuntu`.
+Solució: Afegir `vars: ansible_user: ubuntu` a cada tasca `delegate_to`.
+P12 — index.php es descarregava en lloc d'executar-se
+Problema: El Virtual Host no tenia configuració PHP-FPM, NGINX servia el PHP com a fitxer estàtic.
+Solució: Instal·lar `php8.3-fpm` i afegir el bloc `location ~ \.php$` al Virtual Host.
+P13 — Login web no acceptava usuaris bd
+Problema: Els usuaris `bd1`, `bd2`, `bd3` estan a `ou=admin,ou=usuarios` però el search de LDAP només buscava a `ou=usuarios`.
+Solució: Canviar el search base a `dc=innovatetech,dc=local` per buscar a tot el directori.
+P14 — Logout no funcionava correctament
+Problema: Après de fer logout, l'usuari seguia logejat.
+Solució:
+```php
+session_unset();
+session_destroy();
+setcookie(session_name(), '', time()-3600, '/');
+header('Location: /?section=home');
+exit;
+```
+P15 — AddressLimitExceeded en assignar IP elàstica
+Problema: Les comptes Academy tenen límit de 5 IPs elàstiques.
+Solució: Alliberar les IPs de les instàncies de prova abans d'executar els playbooks de provisió.
 ---
-
-### Problema 5 — NGINX no arrencava després de reinstal·lació
-
-**Descripció:** En eliminar el directori `/etc/nginx` amb Ansible per fer la demostració de recuperació de desastres, en reinstal·lar NGINX el paquet no recreava el directori ni el `nginx.conf`, deixant el servei en estat fallit amb l'error "open() /etc/nginx/nginx.conf failed".
-
-**Causa:** `dpkg` detectava que el paquet estava parcialment configurat i no completava la instal·lació correctament.
-
-**Solució:** Eliminar completament l'estat del paquet i reinstal·lar des d'una nova instància EC2:
+Comprovacions finals
 ```bash
-sudo dpkg --remove --force-remove-reinstreq nginx
-sudo rm -rf /etc/nginx /var/log/nginx /var/lib/nginx
-sudo apt clean && sudo apt update
+# Connexió SSH a totes les màquines
+ssh -i ~/Baixades/innovatetech-key.pem admintech@100.28.104.126  # LDAP
+ssh -i ~/Baixades/innovatetech-key.pem admintech@3.208.185.55    # Logs
+ssh -i ~/Baixades/innovatetech-key.pem admintech@100.50.111.243  # DB
+ssh -i ~/Baixades/innovatetech-key.pem admintech@35.171.63.1     # Web
+
+# LDAP
+ssh -i ~/Baixades/innovatetech-key.pem admintech@100.28.104.126 \
+  "ldapsearch -x -H ldap://localhost -b 'dc=innovatetech,dc=local' | grep dn"
+
+# Web
+curl -I http://innovatetech-itb.duckdns.org
+
+# SFTP per departament
+sftp venda1@35.171.63.1
+sftp suport1@35.171.63.1
+sftp admin1@35.171.63.1
+sftp logis1@35.171.63.1
+
+# Logs centralitzats
+ssh -i ~/Baixades/innovatetech-key.pem admintech@3.208.185.55 \
+  "sudo ls /var/log/remote/"
+
+# MariaDB
+ssh -i ~/Baixades/innovatetech-key.pem admintech@100.50.111.243 \
+  "sudo mysql -u root -p12345 -e 'USE innovatetech; SHOW TABLES;'"
+
+# Ansible ping
+ssh -i ~/Baixades/innovatetech-key.pem admintech@3.208.185.55 \
+  "cd ~/ansible && ansible all -m ping"
+
+# Gestió BD web
+# Obrir http://innovatetech-itb.duckdns.org?section=bd
+# Login: bd1 / bd1234
 ```
-Finalment es va optar per crear una nova instància EC2 i desplegar-la amb el playbook d'Ansible, demostrant precisament la utilitat d'aquesta eina.
-
 ---
-
-### Problema 6 — Grups LDAP duplicats per suport i logística
-
-**Descripció:** Els usuaris de `suport` i `logistica` entraven al SFTP i veien el sistema de fitxers arrel en lloc de la seva carpeta de departament.
-
-**Causa:** Al disseny inicial, `suport` i `logistica` compartien el gid `3003` (treballador) perquè no tenien grups específics. Les regles `Match Group suport` i `Match Group logistica` al `sshd_config` no funcionaven perquè aquests grups no existien al sistema.
-
-**Solució:** Crear grups LDAP específics:
-- `suport` → gid 3004
-- `logistica` → gid 3005
-
-Reassignar els usuaris als nous grups i actualitzar les regles `Match Group` al `sshd_config` usant noms de grup en lloc de gids numèrics.
-
----
-
-### Problema 7 — Ansible instal·lat a la màquina incorrecta
-
-**Descripció:** Per error, Ansible es va instal·lar a `innovatetech-web` en lloc de `innovatetech-logs`.
-
-**Solució:** Desinstal·lar d'on no tocava i instal·lar al node controlador correcte:
-```bash
-# Desinstal·lar del web
-sudo apt remove ansible -y
-
-# Instal·lar al servidor de logs
-sudo apt install ansible -y
-```
-
----
-
-### Problema 8 — ssh-copy-id denegat entre EC2
-
-**Descripció:** No es podia copiar la clau pública d'Ansible entre màquines amb `ssh-copy-id` perquè les EC2 només accepten la clau original `.pem` per defecte.
-
-**Causa:** El fitxer `authorized_keys` de les màquines només contenia la clau pública corresponent al `.pem` original.
-
-**Solució:** Copiar manualment el contingut de la clau pública del node controlador al `authorized_keys` de cada màquina gestionada des del terminal local:
-```bash
-ssh -i ~/Baixades/innovatetech-key.pem admintech@IP_MAQUINA \
-  "echo 'CLAU_PUBLICA_LOGS' >> /home/admintech/.ssh/authorized_keys"
-```
 
 ---
 
