@@ -249,6 +249,8 @@ ssh -i ~/Baixades/innovatetech-key.pem admintech@IP_MAQUINA
 ssh -i "C:\Users\gamer\Downloads\innovatetech-key.pem" admintech@IP_MAQUINA
 ```
 > 📸 **CAPTURA:** Connexió SSH amb usuari admintech.
+> <img width="793" height="489" alt="image" src="https://github.com/user-attachments/assets/05e166b2-f98f-4be0-8536-2383f3c9ed51" />
+
 ---
 9. OpenLDAP
 OpenLDAP centralitza la gestió d'usuaris i grups de l'empresa. Un usuari es crea una sola vegada i pot autenticar-se a múltiples serveis (SFTP, web) amb les mateixes credencials.
@@ -292,7 +294,11 @@ ldapsearch -x -H ldap://localhost -b "dc=innovatetech,dc=local"
 ldapsearch -x -H ldap://localhost -b "ou=usuarios,dc=innovatetech,dc=local"
 ```
 > 📸 **CAPTURA:** ldapsearch mostrant tota l'estructura amb usuaris i grups.
+> <img width="1045" height="473" alt="image" src="https://github.com/user-attachments/assets/298981c6-e26f-4b84-818b-3c283efc9cda" />
+
 > 📸 **CAPTURA:** systemctl status slapd actiu.
+> <img width="1106" height="363" alt="image" src="https://github.com/user-attachments/assets/50790549-2c8b-42ac-b417-a5dc45fd5c85" />
+
 ---
 10. NGINX + PHP + Web corporativa
 NGINX és el servidor web instal·lat a `innovatetech-web`. S'ha configurat amb PHP 8.3 FPM per servir l'aplicació web corporativa d'InnovateTech.
@@ -320,9 +326,12 @@ server {
 }
 ```
 Accés
-IP: http://35.171.63.1
+IP: http://44.197.87.185
 Domini: http://innovatetech-itb.duckdns.org (DuckDNS gratuït)
+http://innovatetech-itb.duckdns.org/
 > 📸 **CAPTURA:** Pàgina web d'InnovateTech al navegador.
+> <img width="2559" height="1438" alt="image" src="https://github.com/user-attachments/assets/dbf675ec-3a07-4f73-a910-133262a8c8ba" />
+
 ---
 11. SFTP autenticat amb LDAP
 El servei SFTP permet la transferència segura de fitxers. Cada departament té la seva pròpia carpeta i els usuaris queden confinats (chroot) a ella. L'autenticació es fa directament contra LDAP.
@@ -367,13 +376,17 @@ Match Group logistica
 ```
 Prova de connexió
 ```bash
-sftp venda1@35.171.63.1    # entra a /sftp/vendes
-sftp suport1@35.171.63.1   # entra a /sftp/suport
-sftp admin1@35.171.63.1    # entra a /sftp/administracio
-sftp logis1@35.171.63.1    # entra a /sftp/logistica
+sftp venda1@44.197.87.185   # entra a /sftp/vendes
+sftp suport1@44.197.87.185  # entra a /sftp/suport
+sftp admin1@44.197.87.185    # entra a /sftp/administracio
+sftp logis1@44.197.87.185    # entra a /sftp/logistica
 ```
 > 📸 **CAPTURA:** Connexió SFTP amb venda1 mostrant la carpeta uploads.
+> <img width="380" height="168" alt="image" src="https://github.com/user-attachments/assets/c9faa7ae-8273-45be-ade5-700fa7c8cee3" />
+
 > 📸 **CAPTURA:** Connexió SFTP amb els 4 departaments.
+> <img width="370" height="315" alt="image" src="https://github.com/user-attachments/assets/b01d4477-33d0-40e0-818f-3fb878d177fa" />
+
 ---
 12. Rsyslog — Centralització de logs
 Rsyslog centralitza els registres de totes les màquines a `innovatetech-logs`. En lloc d'entrar a cada màquina per revisar els logs, tots es concentren en un sol lloc.
