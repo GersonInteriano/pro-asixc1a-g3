@@ -541,8 +541,17 @@ Verificació
 cd ~/ansible && ansible all -m ping
 ```
 > 📸 **CAPTURA:** `ansible all -m ping` amb totes les màquines en SUCCESS.
+> <img width="568" height="259" alt="image" src="https://github.com/user-attachments/assets/88a8b353-07b8-4857-b52c-68c47e229ac6" />
+
 > 📸 **CAPTURA:** Execució de `playbook-provision-web.yml` completada.
+> <img width="1050" height="230" alt="image" src="https://github.com/user-attachments/assets/027d94fc-b1e4-48bb-866e-75f5e9aa2f6f" />
+
+
+
 > 📸 **CAPTURA:** Execució de `playbook-provision-ldap.yml` completada.
+><img width="1116" height="236" alt="image" src="https://github.com/user-attachments/assets/f679891b-b5c3-46ca-bad9-b0780c8755c8" />
+
+
 ---
 15. Aplicació web — Gestió BD i Streaming
 L'aplicació web corporativa d'InnovateTech té tres seccions principals:
