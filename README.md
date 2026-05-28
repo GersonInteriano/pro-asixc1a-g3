@@ -118,7 +118,6 @@ Según la arquitectura definida, los servicios principales (LDAP, streaming, web
 * Firewall y conectividad híbrida con AWS.
 * Switch core y segmentación VLAN.
 * Servidor de administración local.
-* Bastion Host / Jump Server.
 * NAS corporativo de backups.
 * Sistema de monitorización.
 * Consola KVM y electrónica auxiliar.
@@ -195,8 +194,6 @@ Modelo:
 Funciones:
 * Controlador de dominio secundario
 * Gestión interna
-* Bastion Host
-* Jump Server
 
 Consumo operativo estimado:
 * 110 W
