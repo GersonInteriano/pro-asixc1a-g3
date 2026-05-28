@@ -121,6 +121,8 @@ Para una gestión eficiente, la infraestructura se divide en dos armarios Rack d
 ## 3. Despliegue en el Núvol (AWS) <a name="3-despliegue-en-el-nuvol-aws"></a>
 
 Índex
+
+
 Introducció
 Arquitectura general
 Par de claus SSH
