@@ -991,7 +991,8 @@ L'aplicació té tres seccions:
 
 El diagrama Entitat-Relació representa les 14 entitats de la base de dades d'InnovateTech, els seus atributs principals i les relacions entre elles amb la cardinalitat corresponent.
 
-> 📸 **CAPTURA:** Diagrama E/R exportat de dbdiagram.io mostrant totes les entitats i relacions.
+> <img width="1832" height="1304" alt="image" src="https://github.com/user-attachments/assets/c8f4e5f1-8b2d-4add-8716-a14f1eee41e4" />
+ Diagrama E/R exportat de dbdiagram.io mostrant totes les entitats i relacions.
 
 ### 6.2. Diseño Lógico (Relacional)
 
