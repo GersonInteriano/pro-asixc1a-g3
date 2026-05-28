@@ -47,7 +47,7 @@
 
 ## 1. Introducción y Contexto del Proyecto
 
-El presente proyecto tiene como finalidad diseñar e implementar una infraestructura tecnológica robusta para **InnovateTech**, una empresa en expansión dedicada a la provisión de servicios digitales. El núcleo de la propuesta es un modelo híbrido que combina la seguridad y el control de un CPD local con la escalabilidad y alta disponibilidad de la nube de Amazon Web Services (AWS).
+El presente proyecto tiene como finalidad diseñar e implementar una infraestructura tecnológica para **InnovateTech**, una empresa en expansión dedicada a la provisión de servicios digitales. El núcleo de la propuesta es un modelo híbrido en el que los servicios principales de producción se ejecutan sobre AWS, mientras que el CPD local mantiene funciones de conectividad, seguridad, monitorización y respaldo.
 
 InnovateTech experimenta un crecimiento acelerado en sus ventas online y una demanda crítica de soporte técnico. Para atender estas necesidades, el proyecto se enfoca en desplegar:
 
@@ -68,7 +68,7 @@ InnovateTech experimenta un crecimiento acelerado en sus ventas online y una dem
 
 ## 2. Propuesta de CPD Local (Infraestructura Física)
 
-El Centro de Procesamiento de Datos (CPD) local se ha concebido como el centro neurálgico de administración y conectividad de InnovateTech. Su diseño físico prioriza la integridad del hardware y la continuidad del servicio.
+El Centro de Procesamiento de Datos (CPD) actúa como nodo de conectividad híbrida, respaldo y administración de la infraestructura desplegada en AWS.
 
 ### 2.1. Ubicación y Acondicionamiento
 
@@ -78,276 +78,218 @@ La sala técnica se ha acondicionado siguiendo normativas de seguridad y eficien
 
 _[Enlace al plano lógico](https://mermaid.ai/d/1d8e0a02-9697-4f68-99f1-cd7f8237895b)_
 
-- **Entorno Físico:** Ubicación en una sala interior, sin ventanas y con muros de resistencia al fuego. Se utiliza suelo técnico elevado (30 cm) para la canalización oculta de cables y falso techo para la extracción de aire caliente.
+La infraestructura local de InnovateTech se ubica en una sala técnica dedicada, con acceso restringido únicamente al personal autorizado.
 
-- **Climatización de Precisión:** Sistema de aire acondicionado industrial manteniendo la temperatura constante entre 20°C y 22°C. El diseño utiliza la metodología de pasillos fríos y calientes para evitar puntos de calor.
+Dado que la mayor parte de los servicios críticos se encuentran desplegados en AWS, el CPD local tiene funciones principalmente administrativas, de respaldo y monitorización, por lo que no requiere un diseño de alta densidad térmica propio de grandes centros de datos.
 
-- **Detección de Incendios:** Sensores ópticos de humo y temperatura.
+### Características de acondicionamiento
 
-- **Extinción:** Sistema automático mediante gas inerte (Novec o CO2), que sofoca el fuego sin dañar los componentes electrónicos ni dejar residuos.
+La infraestructura física se ubica en una sala técnica interior con ventilación controlada y acceso restringido. Debido al reducido consumo térmico del CPD tras la migración de servicios a AWS, no se requiere climatización de precisión dedicada. La temperatura se mantiene mediante el sistema de climatización general del edificio, configurado entre 24 °C y 26 °C.
 
-- **Control de Acceso:** Cerradura electrónica con registro de entrada para personal autorizado.
+- Sala interior protegida frente a humedad y polvo.
+- Sistema de ventilación y climatización del edificio suficiente para mantener temperaturas estables entre 24 °C y 26 °C.
+- Organización del cableado mediante canaletas y gestión vertical en rack.
+- Sistema de alimentación protegido mediante SAI para evitar pérdidas de servicio ante microcortes eléctricos.
+- Control de acceso mediante cerradura electrónica o llave física restringida.
+- Protección contra incendios
 
-### 2.2. Diseño de Racks y Organización
+### La protección contra incendios se basa en:
 
-Para una gestión eficiente, la infraestructura se divide en dos armarios Rack de 42U:
+- Detectores ópticos de humo.
+- Extintores específicos para equipos eléctricos (CO₂).
+- Sistema de extinción localizado mediante aerosol condensado integrado en rack.
 
-#### Rack 1: Networking y Seguridad
+Esta solución reduce costes y complejidad respecto a sistemas de inundación total por gas inerte, siendo adecuada para una infraestructura de tamaño reducido.
 
-Contiene los elementos que garantizan la comunicación interna y el enlace con AWS:
-- **Patch Panels:** Gestión del cableado estructurado.
-- **Router de Borde y Firewall:** Seguridad perimetral y túnel VPN con la nube.
-- **Switch Core:** Dispositivo de alta velocidad (Capa 3) para distribución de VLANs.
-- **SAI:** Ubicado en la parte inferior para proporcionar estabilidad eléctrica.
+### 2.2 Diseño de racks y organización
 
-#### Rack 2: Gestión y Administración
+La infraestructura física del CPD local se organiza en dos racks independientes con el objetivo de separar las funciones de red y seguridad de los sistemas de administración y almacenamiento. Esta distribución facilita el mantenimiento, mejora la organización del cableado y simplifica futuras ampliaciones.
 
-Orientado al soporte administrativo y la protección de datos local:
-- **Servidor de Administración Local:** Controlador de dominio secundario y gestión de políticas internas.
-- **Almacenamiento NAS:** Nodo dedicado a las copias de seguridad de la base de datos y logs de AWS.
-- **Consola KVM:** Para la administración física de los servidores.
-- **Servidor de Monitorización:** Supervisión en tiempo real de temperatura, consumo y estado de servicios.
+Dado que la mayor parte de los servicios corporativos se ejecutan en AWS, el CPD local mantiene únicamente servicios auxiliares, de conectividad y respaldo, reduciendo considerablemente la complejidad de la infraestructura física.
 
-# 2.3 Infraestructura elèctrica i SAI — Arquitectura híbrida AWS
+---
+
+#### Rack 1 — Networking y Seguridad
+
+Este rack concentra los dispositivos encargados de la conectividad interna, segmentación de red y enlace seguro con la infraestructura desplegada en AWS.
+
+Equipamiento principal:
+
+* **Patch panels** para la gestión del cableado estructurado.
+* **Firewall perimetral** encargado de la seguridad de red y establecimiento del túnel VPN híbrido con AWS.
+* **Switch Core Layer 3** para la distribución de VLANs y segmentación interna.
+* **Router/SD-WAN** para gestión de conectividad WAN.
+* **SAI** instalado en la parte inferior del rack para garantizar estabilidad eléctrica y autonomía ante cortes de suministro.
+
+---
+
+#### Rack 2 — Gestión y Administración
+
+Este rack alberga los sistemas de soporte administrativo y almacenamiento local de respaldo.
+
+Equipamiento principal:
+
+* **Servidor de administración local** destinado a tareas internas de gestión y servicios auxiliares.
+* **NAS corporativo** para almacenamiento de copias de seguridad y registros exportados desde AWS.
+* **Servidor de monitorización** para supervisión de estado de servicios, consumo y eventos.
+* **Consola KVM** para administración física de los equipos.
+* **Electrónica auxiliar y organización de cableado**.
+
+---
+
+# 2.3 Infraestructura eléctrica y sistema SAI
 
 ## Descripción general
 
-Tras la migración de la mayor parte de los servicios corporativos a AWS, el CPD local de InnovateTech adopta un modelo híbrido ligero. La infraestructura local ya no aloja servicios críticos de producción ni aplicaciones principales, sino únicamente servicios de soporte, administración, seguridad y copias de seguridad.
+Tras la migración de los servicios principales a AWS, el CPD local adopta un modelo híbrido ligero orientado principalmente a tareas de:
 
-Según la arquitectura definida, los servicios principales (LDAP, streaming, web, base de datos y logs) se ejecutan sobre instancias EC2 dentro de la VPC corporativa de AWS, mientras que el CPD local mantiene únicamente:
+* conectividad,
+* administración,
+* monitorización,
+* seguridad,
+* almacenamiento de copias de seguridad.
 
-* Firewall y conectividad híbrida con AWS.
-* Switch core y segmentación VLAN.
-* Servidor de administración local.
-* NAS corporativo de backups.
-* Sistema de monitorización.
-* Consola KVM y electrónica auxiliar.
+Los servicios críticos de producción, incluyendo aplicaciones web, streaming, bases de datos y servicios multimedia, se ejecutan sobre infraestructura AWS dentro de la VPC corporativa.
 
-Esta nueva arquitectura reduce considerablemente el consumo eléctrico, la necesidad de refrigeración y la complejidad operativa del CPD físico.
+Esta arquitectura reduce significativamente:
 
----
-
-## Infraestructura eléctrica simplificada
-
-La infraestructura eléctrica sigue manteniendo criterios profesionales de redundancia y alta disponibilidad, aunque adaptados al nuevo volumen real de carga.
-
-### Alimentación redundante
-
-El CPD dispone de:
-
-* Doble acometida eléctrica (Feed A y Feed B).
-* Cuadro General de Distribución (CGD).
-* Dos líneas redundantes:
-  * Línea A
-  * Línea B
-
-Cada línea alimenta un SAI independiente:
-
-* SAI A
-* SAI B
-
-La distribución eléctrica se realiza mediante PDUs redundantes instaladas en el rack principal.
+* el consumo energético,
+* la generación térmica,
+* las necesidades de refrigeración,
+* y la complejidad operativa del CPD local.
 
 ---
 
-## Equipamiento local definitivo
+## Infraestructura eléctrica
+
+Aunque el volumen de carga es reducido, la instalación mantiene criterios básicos de redundancia y continuidad de servicio.
+
+### Alimentación eléctrica
+
+La infraestructura dispone de:
+
+* acometida eléctrica protegida,
+* cuadro eléctrico dedicado,
+* distribución mediante PDUs en rack,
+* y sistemas SAI independientes para equipos críticos.
+
+La separación de cargas permite aislar los sistemas de red de los sistemas de administración y almacenamiento.
+
+---
+
+## Equipamiento local y consumo estimado
 
 ### Rack 1 — Networking y Seguridad
 
-**Firewall en alta disponibilidad**
+| Equipo                 | Modelo                          | Consumo estimado |
+| ---------------------- | ------------------------------- | ---------------- |
+| Firewall principal     | FortiGate 60F                   | 18 W             |
+| Firewall secundario HA | FortiGate 60F                   | 18 W             |
+| Switch Core Layer 3    | Aruba CX 6100 24G 4SFP+         | 45 W             |
+| Router / SD-WAN        | Ubiquiti EdgeRouter 4           | 11 W             |
+| Electrónica auxiliar   | Patch panels, SFP+, ventilación | 20 W             |
 
-Modelo propuesto:
-* 2 × FortiGate 60F HA
-
-Consumo operativo estimado:
-* 18 W cada uno
-
-**Switch Core Layer 3**
-
-Modelo:
-* Aruba CX 6100 24G 4SFP+
-
-Consumo estimado:
-* 45 W
-
-**Router / SD-WAN**
-
-Modelo:
-* Ubiquiti EdgeRouter 4
-
-Consumo estimado:
-* 11 W
-
-**Electrónica auxiliar**
-
-Patch panels, SFP+, ventilación y gestión:
-* 20 W
+**Consumo total Rack 1:**
+112 W
 
 ---
 
 ### Rack 2 — Gestión y Administración
 
-**Servidor de administración local**
+| Equipo                     | Modelo                | Consumo estimado |
+| -------------------------- | --------------------- | ---------------- |
+| Servidor de administración | Dell PowerEdge R250   | 110 W            |
+| NAS corporativo            | QNAP TS-453D          | 35 W             |
+| Servidor de monitorización | Intel NUC / appliance | 25 W             |
+| Consola KVM y periféricos  | —                     | 10 W             |
 
-Modelo:
-* Dell PowerEdge R250
-
-Funciones:
-* Controlador de dominio secundario
-* Gestión interna
-
-Consumo operativo estimado:
-* 110 W
-
-**NAS corporativo**
-
-Modelo:
-* QNAP TS-453D
-
-Consumo operativo estimado:
-* 35 W
-
-**Servidor de monitorización**
-
-Modelo:
-* Mini PC Intel NUC / appliance de monitorización
-
-Consumo operativo estimado:
-* 25 W
-
-**Consola KVM + periféricos**
-
-Consumo estimado:
-* 10 W
+**Consumo total Rack 2:**
+180 W
 
 ---
 
-## Distribución de cargas en los SAI
+## Potencia total estimada
 
-### SAI A
+| Rack   | Consumo |
+| ------ | ------- |
+| Rack 1 | 112 W   |
+| Rack 2 | 180 W   |
 
-| Equipo                  | Consumo |
-| ----------------------- | ------- |
-| Firewall principal      | 18 W    |
-| Switch Core             | 45 W    |
-| Servidor administración | 110 W   |
-| Monitorización          | 25 W    |
-| Electrónica auxiliar    | 20 W    |
+**Consumo operativo total estimado:**
+292 W
 
-**Total SAI A**
-P_L_SAI_A = 218 W
+Aplicando un margen de crecimiento y seguridad del 25%:
 
-Aplicando margen de seguridad del 25%:
-P_{SAI\ A}=218\cdot1.25=272.5\ W
+[
+P_{total}=292 \cdot 1.25 \approx 365\ W
+]
 
-**Potencia final de diseño**
-P_L_SAI_A = 272,5 W
-
----
-
-### SAI B
-
-| Equipo               | Consumo |
-| -------------------- | ------- |
-| Firewall secundario  | 18 W    |
-| Router EdgeRouter 4  | 11 W    |
-| NAS corporativo      | 35 W    |
-| KVM                  | 10 W    |
-
-**Total SAI B**
-P_L_SAI_B = 74 W
-
-Aplicando margen de seguridad del 25%:
-P_{SAI\ B}=74\cdot1.25=92.5\ W
-
-**Potencia final de diseño**
-P_L_SAI_B = 92,5 W
+**Potencia final de diseño:**
+365 W
 
 ---
 
 ## Sistema SAI seleccionado
 
-Modelo recomendado:
-* APC Smart-UPS SMTL1500RMI3UC
+Para garantizar continuidad de servicio ante microcortes o fallos eléctricos, se propone el siguiente sistema SAI:
+
+### Modelo recomendado
+
+* **APC Smart-UPS SMTL1500RMI3UC**
 * Tecnología Lithium-Ion
-* 1500 VA / 1350 W
-* Rack 2U
-* Gestión SNMP integrada
+* Formato Rack 2U
+* Potencia máxima:
 
-Este modelo proporciona una autonomía muy superior a los 20 minutos requeridos gracias a la drástica reducción de carga tras la migración a AWS.
+  * 1500 VA
+  * 1350 W
+* Gestión remota mediante SNMP
 
----
+El sistema proporciona autonomía suficiente para:
 
-## Parámetros utilizados para el cálculo
-
-| Parámetro  | Valor |
-| ---------- | ----- |
-| V_b_total  | 48 V  |
-| η_inv      | 0,90  |
-| DoD        | 0,90  |
-| f_p(I_d)   | 0,95  |
-| f_t(T)     | 1     |
-| f_e        | 1     |
-| f_c        | 0,99  |
-| C_n        | 3,10 Ah |
-
-Energía nominal estimada:
-E_{bat}=3.10\ Ah\cdot48\ V=148.8\ Wh
-
-Energía neta entregable:
-E_{neta}=148.8\cdot0.90\cdot0.90\cdot0.95\cdot1\cdot1\cdot0.99\approx113.36\ Wh
+* apagado controlado de equipos,
+* continuidad de conectividad,
+* mantenimiento temporal de servicios administrativos.
 
 ---
 
-## Cálculo de autonomía
+## Autonomía estimada
 
-### Autonomía SAI A
+Con una carga real aproximada de 365 W, el sistema SAI proporciona una autonomía estimada superior a 20 minutos, cumpliendo ampliamente los requisitos operativos del CPD.
 
-t_{SAI\ A}=\frac{113.36}{272.5}=0.416\ h
-
-Conversión a minutos:
-0.416\cdot60\approx24.96\ min
-
-**Resultado final**
-Autonomía estimada SAI A:
-* 25 minutos aproximadamente.
+Debido al bajo consumo derivado de la arquitectura híbrida con AWS, la autonomía disponible resulta considerablemente superior a la habitual en CPDs tradicionales.
 
 ---
 
-### Autonomía SAI B
+## Consideraciones de eficiencia energética
 
-t_{SAI\ B}=\frac{113.36}{92.5}=1.225\ h
+La reducción de servicios locales permite minimizar:
 
-Conversión a minutos:
-1.225\cdot60\approx73.5\ min
+* consumo eléctrico,
+* disipación térmica,
+* necesidad de refrigeración dedicada,
+* y costes de mantenimiento.
 
-**Resultado final**
-Autonomía estimada SAI B:
-* 73 minutos aproximadamente.
+La climatización general del edificio resulta suficiente para mantener condiciones operativas estables entre 24 °C y 26 °C, sin necesidad de sistemas industriales de refrigeración de precisión.
 
 ---
 
 ## Conclusión técnica
 
-La migración de la infraestructura principal a AWS ha reducido drásticamente la dependencia del CPD físico local. El nuevo diseño mantiene únicamente servicios esenciales de:
+La adopción de una arquitectura híbrida basada en AWS permite simplificar considerablemente el CPD local manteniendo un nivel adecuado de:
 
-* administración,
-* conectividad,
+* disponibilidad,
 * seguridad,
-* monitorización,
-* backups.
+* redundancia,
+* y capacidad de administración.
 
-Esta simplificación permite:
+El diseño final prioriza:
 
-* Reducir consumo energético.
-* Reducir necesidades de refrigeración.
-* Aumentar la autonomía de los SAI.
-* Simplificar el mantenimiento.
-* Reducir riesgos operativos.
-* Mantener alta disponibilidad híbrida con AWS.
+* eficiencia energética,
+* reducción de costes,
+* simplicidad operativa,
+* y escalabilidad futura.
 
-Los cálculos realizados demuestran que el sistema APC SMTL1500RMI3UC cubre ampliamente el requisito mínimo de 20 minutos de autonomía.
-
+La infraestructura eléctrica y el sistema SAI seleccionados cubren adecuadamente las necesidades reales del entorno, proporcionando continuidad de servicio y protección frente a incidencias eléctricas.
 
 [⬆ Volver al índice](#tabla-de-contenidos)
 
