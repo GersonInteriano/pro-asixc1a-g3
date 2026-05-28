@@ -107,7 +107,7 @@ Orientado al soporte administrativo y la protección de datos local:
 - **Consola KVM:** Para la administración física de los servidores.
 - **Servidor de Monitorización:** Supervisión en tiempo real de temperatura, consumo y estado de servicios.
 
-# 1.3 Infraestructura elèctrica i SAI — Arquitectura híbrida AWS
+# 2.3 Infraestructura elèctrica i SAI — Arquitectura híbrida AWS
 
 ## Descripción general
 
@@ -351,6 +351,114 @@ Los cálculos realizados demuestran que el sistema APC SMTL1500RMI3UC cubre ampl
 [⬆ Volver al índice](#tabla-de-contenidos)
 
 ---
+## 2.4 Seguridad Física
+
+### Enfoque de diseño
+
+Aunque no protegemos servidores que facturan en tiempo real, sí custodiamos los elementos que garantizan la conectividad con la nube y la integridad de las copias de seguridad locales. Nuestro principio rector ha sido claro: **mantener un nivel de seguridad profesional sin sobredimensionar ni generar costes operativos innecesarios**.
+
+A continuación, detallamos las medidas adoptadas, todas ellas dimensionadas para un CPD reducido a dos racks y coherentes con la filosofía de simplicidad operativa del proyecto.
+
+---
+
+### Control de acceso físico
+
+Hemos descartado el despliegue de una infraestructura de control de accesos a nivel de sala (puerta blindada, tornos, lectores murales) porque el nuevo emplazamiento probablemente sea un habitáculo técnico compartido o un espacio de oficina adaptado. En su lugar, trasladamos la barrera de seguridad directamente al armario.
+
+**Solución implantada**
+
+- **Armario rack con cerradura de seguridad**, paneles frontal y trasero con llave. Modelo de referencia: armario de 42U con puerta perforada y cerradura de tres puntos.
+- **Cerradura electrónica RFID + PIN** instalada en la propia puerta del rack. Hemos seleccionado un kit de control de acceso para rack compatible con tarjetas MIFARE y registro horario (logs almacenados en memoria interna con descarga USB).
+- **Política de acceso por roles**: solo los miembros del equipo de administración de sistemas tienen tarjeta habilitada. El registro digital nos permite auditoría de accesos sin necesidad de software adicional.
+
+**Por qué lo hemos hecho así**
+
+- La solución no requiere obra civil, se instala en el propio rack y cubre el 100% de los activos físicos.
+- Mantenemos la doble barrera (llave + RFID) sin complejidad biométrica, desproporcionada para un espacio con menos de cinco personas autorizadas.
+- Cumplimos con los requisitos de trazabilidad de accesos que exige el Esquema Nacional de Seguridad en su categoría básica.
+
+---
+
+### Videovigilancia
+
+Desplegar un sistema CCTV completo con NVR dedicado, switch PoE y varias cámaras 360º habría ido contra la filosofía del proyecto. Hemos buscado una solución que aproveche recursos ya existentes y que no añada nuevos servidores físicos.
+
+**Solución implantada**
+
+- **Una cámara IP bullet** (modelo Ubiquiti UniFi G4 Bullet o equivalente) montada en la pared o en el techo, con encuadre directo a la parte frontal de los dos racks.
+- **Grabación sobre el NAS corporativo QNAP TS-453D**, que ya disponemos para backups. Utilizamos el software Surveillance Station de QNAP, con licencia para una cámara incluida.
+- **Señalización de zona videovigilada** mediante adhesivo normalizado en la puerta de acceso a la sala.
+
+**Por qué lo hemos hecho así**
+
+- Una sola cámara cubre todo el plano de trabajo. No necesitamos visión nocturna porque la sala dispone de iluminación de emergencia.
+- Aprovechamos el NAS existente como grabador, eliminando la necesidad de un NVR adicional y su consumo eléctrico (habríamos añadido unos 35-40 W extra).
+- La gestión de la cámara se integra en la misma interfaz de administración del NAS, unificando la monitorización del entorno.
+
+---
+
+### Prevención, detección y extinción de incendios
+
+Este ha sido el punto donde más hemos ajustado la escala. Los sistemas de aspiración de aire (tipo VESDA) y las instalaciones automáticas de gas Novec 1230 por inundación total de sala están pensados para CPDs de varios racks y superficies superiores a 20-30 m². Nuestro escenario no lo justifica ni técnica ni económicamente.
+
+**Solución implantada: prevención**
+
+- **Cableado certificado LSZH** (Low Smoke Zero Halogen) en todas las conexiones internas y latiguillos del rack.
+- **Sensor ambiental de temperatura y humedad** APC AP9335TH (o compatible) instalado en la parte superior del rack, conectado al SAI. Si la temperatura supera los 35 °C, el SAI genera un evento SNMP que recoge el sistema de monitorización.
+- Separación natural entre el rack de networking (calor moderado) y el rack de gestión, con ventilación forzada propia en cada armario.
+
+**Solución implantada: detección**
+
+- **Detector de humo óptico autónomo** instalado en el interior del rack, con salida de contacto seco cableada a la entrada de contactos del SAI. Cualquier alarma de humo dispara una notificación inmediata al equipo de operaciones.
+- El mismo sensor de temperatura nos sirve como verificación térmica ante una posible alarma de humo (doble comprobación antes de actuar).
+
+**Solución implantada: extinción**
+
+- **Dispositivo de extinción automática por aerosol condensado** dentro de cada rack. Hemos seleccionado unidades compactas tipo FirePro o STAT-X, con activación por fusible térmico a 79 °C. No llevan electrónica, no caducan en 10 años y no dañan los equipos ni dejan residuos conductores.
+- **Extintor manual de CO₂ de 2 kg** fijado en la pared junto a la entrada del habitáculo, para uso del personal en caso de conato.
+
+**Por qué lo hemos hecho así**
+
+- Los dispositivos de aerosol condensado son la solución más limpia y escalable para racks individuales. No necesitan tuberías, ni depósitos presurizados, ni mantenimiento anual obligatorio.
+- La integración de los sensores con el SAI nos permite recibir alarmas sin desplegar un sistema de detección de incendios independiente.
+- Todo el conjunto añade menos de 200 € al presupuesto del rack y proporciona una protección real contra el fuego sin falsos techos ni obras.
+
+---
+
+### Vías de evacuación e iluminación de emergencia
+
+La responsabilidad sobre las vías de evacuación corresponde al plan de autoprotección del edificio, no al proyecto del CPD. Nuestra intervención se ha limitado a dos verificaciones y una mejora menor:
+
+- **Verificación de ubicación**: hemos comprobado que los dos racks no interfieren con puertas de emergencia ni reducen la anchura de los pasillos por debajo de 1 metro, tal como exige el CTE DB-SI.
+- **Iluminación de emergencia**: la sala ya dispone de luminaria LED autónoma con batería recargable. Si no hubiera existido, habríamos añadido una unidad de superficie con autonomía de 1 hora.
+- **Simulacros**: incluimos en el plan de operaciones un procedimiento de corte de suministro y verificación de apagado controlado, coordinado con el responsable de PRL del edificio.
+
+---
+
+### Integración con el sistema de monitorización
+
+Todas las señales de seguridad física convergen en nuestro sistema de monitorización local:
+
+- Los contactos de alarma del sensor de humo y del sensor de temperatura se cablean a los puertos de entrada digital del SAI APC.
+- El SAI envía traps SNMP a la estación de monitorización (Intel NUC con Zabbix/Grafana, definida en la sección de infraestructura).
+- La cámara IP es accesible desde el panel de administración del NAS QNAP, donde también se configuran las alertas por detección de movimiento.
+
+Con esto logramos un **cuadro de seguridad física unificado**, sin consolas adicionales ni software propietario más allá de lo que ya tenemos en operación.
+
+---
+
+### Resumen de soluciones adoptadas
+
+| Ámbito | Solución | Consumo extra | Mantenimiento requerido |
+|--------|----------|:-------------:|-------------------------|
+| Control de acceso | Cerradura electrónica RFID en rack | 0 W (batería o PoE) | Revisión anual de logs |
+| Videovigilancia | 1 cámara IP → grabación en NAS | PoE desde switch | Revisión trimestral de almacenamiento |
+| Detección incendios | Sensor óptico de humo + sensor de temperatura en rack | 0 W (contactos secos) | Prueba funcional semestral |
+| Extinción incendios | Aerosol condensado (por rack) + extintor CO₂ | 0 W | Inspección visual anual; sustitución a los 10 años |
+| Iluminación emergencia | Luminaria LED autónoma existente | 0 W | Prueba mensual de autonomía |
+
+Todas las decisiones que hemos tomado en seguridad física responden a la misma premisa que guió la migración a AWS: **mantener lo necesario, eliminar lo superfluo y asegurar que cada elemento tenga una razón de peso para estar ahí**. El resultado es un CPD ligero, protegido y perfectamente auditado.
+
 
 ## 3. Despliegue en el Núvol (AWS)
 
