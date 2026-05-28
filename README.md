@@ -1056,7 +1056,7 @@ FLUSH PRIVILEGES;
 | Port | `3306` |
 | Usuari | `admin` |
 
-> <img width="880" height="334" alt="image" src="https://github.com/user-attachments/assets/fb86346a-4c46-4cc8-a530-367de08cd806" />
+<img width="1092" height="561" alt="image" src="https://github.com/user-attachments/assets/90834699-6ac8-4367-8e65-d61e0209eb49" />
 > 📸 **CAPTURA:** `systemctl status mariadb` mostrant el servei actiu.
 
 ### 6.4. Script de Creación de Usuarios
