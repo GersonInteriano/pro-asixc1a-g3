@@ -865,8 +865,12 @@ sudo apt install -y nginx libnginx-mod-rtmp
 ```bash
 nginx -v
 sudo systemctl status nginx
+<img width="1264" height="441" alt="image" src="https://github.com/user-attachments/assets/9617ca5e-8607-45a9-82fa-2c4f58665fad" />
+
 sudo ss -tlnp | grep 8080
 curl -I http://localhost:8080
+<img width="754" height="262" alt="image" src="https://github.com/user-attachments/assets/0ae0ff2b-01fc-476c-a84b-eb233aeff171" />
+
 ```
 
 **Audio bajo demanda — Nginx:**
@@ -879,11 +883,16 @@ sudo ffmpeg -f lavfi -i sine=frequency=440:duration=30 \
   -c:a libmp3lame -b:a 128k /var/www/html/audio/audio4.mp3
 sudo chown -R www-data:www-data /var/www/html/audio
 ```
+<img width="818" height="187" alt="image" src="https://github.com/user-attachments/assets/a5d61c8e-406e-43f9-bbf7-b9b092a36bfa" />
+
+<img width="1000" height="266" alt="image" src="https://github.com/user-attachments/assets/0ed60dc7-7b94-450f-8bc2-ce906d99c9bd" />
 
 **Streaming en directo — Icecast2:**
 ```bash
 sudo apt install -y icecast2
 ```
+<img width="1254" height="511" alt="image" src="https://github.com/user-attachments/assets/882a4203-a9e9-496f-a0e6-243734c107ae" />
+
 
 | Parámetro | Valor |
 |-----------|-------|
@@ -896,6 +905,12 @@ sudo apt install -y icecast2
 sudo systemctl status icecast2
 curl -v http://localhost:8000/stream.ogg --output /dev/null 2>&1 | head -20
 ```
+<img width="1265" height="419" alt="image" src="https://github.com/user-attachments/assets/e80f686d-857b-487e-a9c9-bbd7674c8716" />
+
+<img width="1089" height="554" alt="image" src="https://github.com/user-attachments/assets/d715185c-7fce-4903-9633-1c27c9326e25" />
+
+<img width="1255" height="718" alt="image" src="https://github.com/user-attachments/assets/ea8e63b4-f816-41a4-9cf9-cf8693daeb34" />
+
 
 **Protocolos utilizados:**
 
@@ -927,11 +942,14 @@ sudo ffmpeg -f lavfi -i testsrc=duration=30:size=1280x720:rate=30 \
   /var/www/html/videos/video4.mp4
 sudo chown -R www-data:www-data /var/www/html/videos
 ```
+<img width="830" height="218" alt="image" src="https://github.com/user-attachments/assets/797e12c5-1052-4137-be47-6ce324c52bda" />
+
 
 **Verificación:**
 ```bash
 curl -I http://localhost:8080/videos/video1.mp4
 ```
+<img width="1015" height="316" alt="image" src="https://github.com/user-attachments/assets/f882031c-ffec-4fb4-8e5e-fca8d8d80f9a" />
 
 **Protocolos utilizados:**
 
@@ -945,6 +963,8 @@ curl -I http://localhost:8080/videos/video1.mp4
 - ✅ Nginx operativo en el puerto 8080 — vídeo MP4 (H.264) y audio MP3 bajo demanda
 - ✅ Icecast2 operativo en el puerto 8000 — streaming en directo OGG/Vorbis
 - ✅ Interfaz web unificada en `http://34.225.147.8:8080`
+  
+<img width="1273" height="739" alt="image" src="https://github.com/user-attachments/assets/a664b9ec-e706-4b6f-9e2b-38b6869bf679" />
 
 ### 4.3. Videoconferencia (Jitsi Meet)
 
@@ -967,6 +987,11 @@ echo "127.0.0.1 jitsi-meet" | sudo tee -a /etc/hosts
 echo "54.227.77.10 jitsi-meet" | sudo tee -a /etc/hosts
 sudo apt install -y openjdk-11-jdk
 ```
+<img width="815" height="354" alt="image" src="https://github.com/user-attachments/assets/9d8b5f54-3bcb-482d-ab4c-694545c27b26" />
+
+<img width="1081" height="153" alt="image" src="https://github.com/user-attachments/assets/784f8c67-cc6e-496f-9a7f-f502ccbe6a1f" />
+
+<img width="1205" height="295" alt="image" src="https://github.com/user-attachments/assets/94443cd7-29b4-4ea0-8547-57228a040928" />
 
 **Paso 2 — Repositorio oficial de Jitsi:**
 ```bash
@@ -991,6 +1016,10 @@ sudo prosodyctl register jvb auth.jitsi-meet $JVB_PASS
 sudo prosodyctl register focus auth.jitsi-meet $FOCUS_PASS
 sudo systemctl restart prosody
 ```
+<img width="997" height="75" alt="image" src="https://github.com/user-attachments/assets/07fb83a4-3245-4449-b796-273aa95a8345" />
+
+<img width="1225" height="300" alt="image" src="https://github.com/user-attachments/assets/3b55bb4f-f88c-485e-8495-97a9dedc4752" />
+
 
 **Configuració NAT per AWS** (`/etc/jitsi/videobridge/jvb.conf`):
 ```hocon
@@ -1005,8 +1034,15 @@ ice4j {
     }
 }
 ```
+<img width="915" height="734" alt="image" src="https://github.com/user-attachments/assets/7cc5483e-48fa-4630-9a56-432d645d20a1" />
 
-> ⚠️ **Lección aprendida:** la versión JVB 2.3-291 lee la configuración XMPP únicamente de `sip-communicator.properties`, con claves en **MAYÚSCULAS**. Sin el mapeado NAT correcto, ICE no puede negociar los candidatos de media.
+> ⚠️ **Lección aprendida:** la versión JVB 2.3-291 lee la configuración XMPP únicamente de `sip-communicator.properties`, con claves en **MAYÚSCULAS**. Sin el mapeado NAT correcto, ICE no puede negociar los candidatos de media.>
+
+<img width="1262" height="192" alt="image" src="https://github.com/user-attachments/assets/0ef373c7-481b-4474-811f-4f425c2bc767" />
+
+<img width="1251" height="386" alt="image" src="https://github.com/user-attachments/assets/3e737ef6-d0a2-4b5e-8180-ad426d0cbd26" />
+
+<img width="566" height="770" alt="image" src="https://github.com/user-attachments/assets/2cf5fb46-f7b0-4b01-9126-5411314958af" />
 
 **Protocolos utilizados:**
 
