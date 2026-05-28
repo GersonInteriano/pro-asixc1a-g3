@@ -577,10 +577,20 @@ El sistema verifica contra LDAP (`10.0.6.122`)
 Comprova que el `uid` comenci per `bd`
 Si és correcte, dóna accés a la gestió
 > 📸 **CAPTURA:** Pàgina d'inici de la web corporativa.
+> <img width="2559" height="1438" alt="image" src="https://github.com/user-attachments/assets/281f7c64-fbf4-43aa-945f-2525636bca09" />
+
 > 📸 **CAPTURA:** Secció de streaming amb els dos serveis.
+> <img width="2531" height="636" alt="image" src="https://github.com/user-attachments/assets/245e8002-fb57-4755-9f5e-38501bdcf1db" />
+
 > 📸 **CAPTURA:** Login de gestió BD.
+> <img width="2537" height="720" alt="image" src="https://github.com/user-attachments/assets/ee0a2f7e-6250-4fd4-99d3-83813ef46ac5" />
+
 > 📸 **CAPTURA:** Taula d'empleats amb dades.
+> <img width="2515" height="956" alt="image" src="https://github.com/user-attachments/assets/a13d3431-8518-4f10-9bc3-9fcc62853f81" />
+
 > 📸 **CAPTURA:** Formulari d'inserció de registre.
+> <img width="1617" height="276" alt="image" src="https://github.com/user-attachments/assets/fefcde57-e9f3-4b35-a35a-1fa73ec746f9" />
+
 ---
 16. Problemes i solucions
 P1 — Permisos del fitxer .pem a Windows
