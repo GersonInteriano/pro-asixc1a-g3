@@ -1284,7 +1284,8 @@ CREATE ROLE 'administracio';
 CREATE ROLE 'treballador';
 ```
 
-> 📸 **CAPTURA:** `SELECT Host, User, is_role FROM mysql.user WHERE is_role='Y'` mostrant els 4 rols.
+> <img width="1023" height="281" alt="image" src="https://github.com/user-attachments/assets/15b886f7-17da-4c36-8c47-2f3724e2daf1" />
+ `SELECT Host, User, is_role FROM mysql.user WHERE is_role='Y'` mostrant els 4 rols.
 > 📸 **CAPTURA:** `SHOW GRANTS FOR 'vendes'` i `SHOW GRANTS FOR 'administracio'`.
 
 ### 6.6. Triggers, Events y Auditoría
