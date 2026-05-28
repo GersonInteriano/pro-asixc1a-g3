@@ -123,22 +123,22 @@ Para una gestión eficiente, la infraestructura se divide en dos armarios Rack d
 Índex
 
 
-Introducció
-Arquitectura general
-Par de claus SSH
-VPC
-Security Group
-Instàncies EC2
-IPs elàstiques
-Usuari admintech
-OpenLDAP
-NGINX + PHP + Web corporativa
-SFTP autenticat amb LDAP
-Rsyslog — Centralització de logs
-MariaDB
-Ansible
-Aplicació web — Gestió BD i Streaming
-Problemes i solucions
+[Introducció]
+[Arquitectura general]
+[Par de claus SSH]
+[VPC]
+[Security Group]
+[Instàncies EC2]
+[IPs elàstiques]
+[Usuari admintech]
+[OpenLDAP]
+[NGINX + PHP + Web corporativa]
+[SFTP autenticat amb LDAP]
+[Rsyslog — Centralització de logs]
+[MariaDB]
+[Ansible]
+[Aplicació web — Gestió BD i Streaming]
+[Problemes i solucions]
 ---
 1. Introducció
 Aquest document recull tota la infraestructura desplegada al núvol AWS per a l'empresa fictícia InnovateTech, una empresa dedicada a la provisió de serveis tecnològics. L'objectiu és dissenyar i implementar un Centre de Processament de Dades (CPD) virtual al núvol que doni suport a totes les operacions de l'empresa.
