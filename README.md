@@ -294,9 +294,11 @@ ldapsearch -x -H ldap://localhost -b "dc=innovatetech,dc=local"
 ldapsearch -x -H ldap://localhost -b "ou=usuarios,dc=innovatetech,dc=local"
 ```
 > 📸 **CAPTURA:** ldapsearch mostrant tota l'estructura amb usuaris i grups.
+
 > <img width="1045" height="473" alt="image" src="https://github.com/user-attachments/assets/298981c6-e26f-4b84-818b-3c283efc9cda" />
 
 > 📸 **CAPTURA:** systemctl status slapd actiu.
+
 > <img width="1106" height="363" alt="image" src="https://github.com/user-attachments/assets/50790549-2c8b-42ac-b417-a5dc45fd5c85" />
 
 ---
@@ -330,6 +332,7 @@ IP: http://44.197.87.185
 Domini: http://innovatetech-itb.duckdns.org (DuckDNS gratuït)
 http://innovatetech-itb.duckdns.org/
 > 📸 **CAPTURA:** Pàgina web d'InnovateTech al navegador.
+
 > <img width="2559" height="1438" alt="image" src="https://github.com/user-attachments/assets/dbf675ec-3a07-4f73-a910-133262a8c8ba" />
 
 ---
@@ -382,9 +385,11 @@ sftp admin1@44.197.87.185    # entra a /sftp/administracio
 sftp logis1@44.197.87.185    # entra a /sftp/logistica
 ```
 > 📸 **CAPTURA:** Connexió SFTP amb venda1 mostrant la carpeta uploads.
+
 > <img width="380" height="168" alt="image" src="https://github.com/user-attachments/assets/c9faa7ae-8273-45be-ade5-700fa7c8cee3" />
 
 > 📸 **CAPTURA:** Connexió SFTP amb els 4 departaments.
+
 > <img width="370" height="315" alt="image" src="https://github.com/user-attachments/assets/b01d4477-33d0-40e0-818f-3fb878d177fa" />
 
 ---
@@ -415,6 +420,9 @@ sudo ls /var/log/remote/
 # ip-10-0-6-122  ip-10-0-0-208  ip-10-0-7-135  ip-10-0-7-77  ip-10-0-9-98
 ```
 > 📸 **CAPTURA:** `ls /var/log/remote/` mostrant les carpetes de totes les màquines.
+>
+> <img width="1050" height="144" alt="image" src="https://github.com/user-attachments/assets/db10733d-5c50-42e4-a4fc-0c1e3a373d95" />
+
 ---
 13. MariaDB
 MariaDB s'instal·la a `innovatetech-db` per allotjar la base de dades integral d'InnovateTech. Es va escollir MariaDB per ser més lleugera que MySQL i compatible al 100%.
@@ -444,7 +452,11 @@ Control_Backup, Departaments, Empleats, Mesures_Amplada_Banda,
 Productes, Taula_Avisos, Trucades, Usuaris
 ```
 > 📸 **CAPTURA:** systemctl status mariadb actiu.
+> <img width="880" height="334" alt="image" src="https://github.com/user-attachments/assets/fb86346a-4c46-4cc8-a530-367de08cd806" />
+
 > 📸 **CAPTURA:** SHOW TABLES a la BD innovatetech.
+> <img width="781" height="286" alt="image" src="https://github.com/user-attachments/assets/7d2e7bb3-f6ca-4b03-bb54-6fc24fafc506" />
+
 ---
 14. Ansible
 Ansible automatitza la configuració de servidors des del node controlador `innovatetech-logs`. S'han creat playbooks capaços de crear instàncies EC2 des de zero i configurar-les completament.
