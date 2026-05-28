@@ -1154,7 +1154,8 @@ echo "Fitxer SQL generat: $OUTPUT_FILE"
 
 > <img width="736" height="536" alt="image" src="https://github.com/user-attachments/assets/9061216f-bb98-4c89-82e2-6296b28ceae2" />
  Execució de `create_users.sh` creant un usuari amb rol `admin`.
-> 📸 **CAPTURA:** Contingut de `usuaris_creats.sql` mostrant les sentències `CREATE USER` i `GRANT`.
+> <img width="733" height="358" alt="image" src="https://github.com/user-attachments/assets/3384f1fb-8fb3-4276-96e3-08edea3fdaee" />
+ Contingut de `usuaris_creats.sql` mostrant les sentències `CREATE USER` i `GRANT`.
 
 ### 6.5. Roles y Permisos
 
