@@ -1389,17 +1389,26 @@ Les proves s'han realitzat entre les dues instàncies EC2 desplegades a la matei
 sudo apt install -y iperf3
 iperf3 -s -D   # servidor a Instància 1
 ```
+<img width="1219" height="170" alt="image" src="https://github.com/user-attachments/assets/3261bfe7-4818-4441-b3a2-44452f18d9fb" />
 
 **Prova 1 — Instància 2 → Instància 1:**
 ```bash
 iperf3 -c 172.31.17.184 -p 5201 -t 10        # Download
+<img width="1085" height="555" alt="image" src="https://github.com/user-attachments/assets/0e260609-4760-4d87-982d-d593eba488e0" />
+
 iperf3 -c 172.31.17.184 -p 5201 -t 10 -R     # Upload
+<img width="1061" height="577" alt="image" src="https://github.com/user-attachments/assets/06286965-852b-483b-8149-83ba06f8d04e" />
+
 ```
 
 **Prova 2 — Instància 1 → Instància 2:**
 ```bash
 iperf3 -c 172.31.36.193 -p 5201 -t 10
+<img width="1092" height="544" alt="image" src="https://github.com/user-attachments/assets/b1d015c2-8f5a-483e-b983-fcfeb8a6e8d7" />
+
 iperf3 -c 172.31.36.193 -p 5201 -t 10 -R
+<img width="1117" height="584" alt="image" src="https://github.com/user-attachments/assets/153c88e2-5518-428e-9cf0-4e5f3db03b9e" />
+
 ```
 
 **Resum de resultats:**
