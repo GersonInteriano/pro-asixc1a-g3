@@ -77,7 +77,7 @@ La sala técnica se ha acondicionado siguiendo normativas de seguridad y eficien
 <img width="8192" height="3097" alt="image" src="https://github.com/user-attachments/assets/3e784b52-bdbe-4efc-beb0-6219a25ca03a" />
 
 
-_[Enlace al plano lógico]([https://mermaid.ai/d/1d8e0a02-9697-4f68-99f1-cd7f8237895b](https://mermaid.ai/d/1d8e0a02-9697-4f68-99f1-cd7f8237895b))_
+_[Enlace al plano lógico](https://mermaid.ai/d/1d8e0a02-9697-4f68-99f1-cd7f8237895b](https://mermaid.ai/d/1d8e0a02-9697-4f68-99f1-cd7f8237895b)
 
 La infraestructura local de InnovateTech se ubica en una sala técnica dedicada, con acceso restringido únicamente al personal autorizado.
 
