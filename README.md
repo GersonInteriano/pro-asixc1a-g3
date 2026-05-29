@@ -1343,12 +1343,13 @@ iperf3 -s -D   # servidor a Instància 1
 **Prova 1 — Instància 2 → Instància 1:**
 ```bash
 iperf3 -c 172.31.17.184 -p 5201 -t 10        # Download
+```
 <img width="1085" height="555" alt="image" src="https://github.com/user-attachments/assets/0e260609-4760-4d87-982d-d593eba488e0" />
-
+```
 iperf3 -c 172.31.17.184 -p 5201 -t 10 -R     # Upload
+```
 <img width="1061" height="577" alt="image" src="https://github.com/user-attachments/assets/06286965-852b-483b-8149-83ba06f8d04e" />
 
-```
 
 **Prova 2 — Instància 1 → Instància 2:**
 ```bash
