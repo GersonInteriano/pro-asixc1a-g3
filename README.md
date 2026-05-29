@@ -1353,12 +1353,16 @@ iperf3 -c 172.31.17.184 -p 5201 -t 10 -R     # Upload
 **Prova 2 — Instància 1 → Instància 2:**
 ```bash
 iperf3 -c 172.31.36.193 -p 5201 -t 10
+```
+
 <img width="1092" height="544" alt="image" src="https://github.com/user-attachments/assets/b1d015c2-8f5a-483e-b983-fcfeb8a6e8d7" />
 
+
 iperf3 -c 172.31.36.193 -p 5201 -t 10 -R
+```
+
 <img width="1117" height="584" alt="image" src="https://github.com/user-attachments/assets/153c88e2-5518-428e-9cf0-4e5f3db03b9e" />
 
-```
 
 **Resum de resultats:**
 
