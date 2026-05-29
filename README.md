@@ -1559,7 +1559,24 @@ Como reflexión final, este proyecto ha puesto de manifiesto que la tecnología,
 
 ## 11. Anexos y Entregables
 
-*(Contenido aquí...)*
+El CPD local utiliza una segmentación VLAN simple pero funcional, orientada a seguridad, separación de tráfico y gestión eficiente en un entorno híbrido con AWS.
+
+| VLAN | Nombre         | Subred          | Gateway      | Uso                     |
+| ---- | -------------- | --------------- | ------------ | ----------------------- |
+| 10   | Gestión        | 192.168.10.0/24 | 192.168.10.1 | Administración, bastion |
+| 20   | Servidores     | 192.168.20.0/24 | 192.168.20.1 | NAS, servicios locales  |
+| 30   | Monitorización | 192.168.30.0/24 | 192.168.30.1 | Zabbix / métricas       |
+| 40   | Usuarios       | 192.168.40.0/24 | 192.168.40.1 | Acceso interno          |
+| 50   | Backup         | 192.168.50.0/24 | 192.168.50.1 | Tráfico NAS             |
+
+| Origen    | Destino  | Puerto          | Acción   | Descripción              |
+| --------- | -------- | --------------- | -------- | ------------------------ |
+| VLAN10    | Todas    | SSH / RDP       | PERMITIR | Administración           |
+| VLAN20    | AWS VPC  | HTTPS           | PERMITIR | Sincronización servicios |
+| VLAN30    | Todos    | SNMP / HTTP API | PERMITIR | Monitorización           |
+| VLAN40    | Internet | HTTP/HTTPS      | PERMITIR | Acceso usuarios          |
+| VLAN50    | NAS      | SMB/NFS         | PERMITIR | Backups internos         |
+| Cualquier | VLAN10   | -               | DENEGAR  | Protección gestión       |
 
 [⬆ Volver al índice](#tabla-de-contenidos)
 
