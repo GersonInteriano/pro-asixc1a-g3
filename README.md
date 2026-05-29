@@ -1560,6 +1560,8 @@ Como reflexión final, este proyecto ha puesto de manifiesto que la tecnología,
 ## 11. Anexos y Entregables
 
 El CPD local utiliza una segmentación VLAN simple pero funcional, orientada a seguridad, separación de tráfico y gestión eficiente en un entorno híbrido con AWS.
+<img width="1939" height="973" alt="image" src="https://github.com/user-attachments/assets/7b7ec19c-63b4-4600-8f30-a6ab5e974f5d" />
+
 
 | VLAN | Nombre         | Subred          | Gateway      | Uso                     |
 | ---- | -------------- | --------------- | ------------ | ----------------------- |
